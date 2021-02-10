@@ -1,5 +1,7 @@
 # Machine Learning Project: Predicting habitable exoplanets
 
+This project aims to show how machine learning could speed up exolpanets detection using NASA's Kepler data as starting base. 
+
 Introduction
 ------------
 
