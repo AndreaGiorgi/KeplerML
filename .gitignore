@@ -1,4 +1,23 @@
-# Byte-compiled / optimized / DLL files
+*.tmp
+
+# Word
+~$*.doc*
+
+# Word Auto Backup File
+Backup of *.doc*
+
+# Excel temporary
+~$*.xls*
+
+# Excel Backup File
+*.xlk
+
+# PowerPoint
+~$*.ppt*
+
+# Visio autosave temporary files
+*.~vsd*
+.vscode
 __pycache__/
 *.py[cod]
 *$py.class
@@ -127,3 +146,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Project specific ignore
+*.h5
+*.txt
+*.csv
