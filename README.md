@@ -21,7 +21,7 @@ How to use
 Maintainers
 ------------
 
-Andrea Giorgi 508800
-Gianluca De Angelis 507892
+* Andrea Giorgi 508800
+* Gianluca De Angelis 507892
 
 
