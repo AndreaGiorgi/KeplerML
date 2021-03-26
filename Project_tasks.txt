@@ -1,6 +1,6 @@
 TODO:
     1. Feature Enginnering and Extraction
-    2. Feature Selection
+    2. Feature Selection (Già presente nel codice)
     3. Refactor and Modularization
     4. Introduce Cross-Validation K-Fold
     5. Introduce new SVM, with new kernel
