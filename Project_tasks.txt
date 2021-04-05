@@ -3,6 +3,6 @@ TODO:
     2. Feature Selection (Già presente nel codice)
     3. Refactor and Modularization
     4. Introduce Cross-Validation K-Fold
-    5. Introduce new SVM, with new kernel
-    6. Introduce new ANN, classification based with Softmax output layer
+    5. Introduce new SVM, with new kernel (Polynomial or Sigmoid)
+    6. Introduce new ANN, classification based with Logistic output layer ( )
     7. Comparision between all models (Parallel execution? Multiprocessing?)
