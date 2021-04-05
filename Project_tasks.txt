@@ -4,5 +4,5 @@ TODO:
     3. Refactor and Modularization
     4. Introduce Cross-Validation K-Fold
     5. Introduce new SVM, with new kernel (Polynomial or Sigmoid)
-    6. Introduce new ANN, classification based with Logistic output layer ( )
+    6. Introduce new ANN, classification based with Logistic output layer ( Easy 2/3 strati)
     7. Comparision between all models (Parallel execution? Multiprocessing?)
