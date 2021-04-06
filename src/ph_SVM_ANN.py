@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+@authors: Andrea Giorgi and Gianluca De Angelis 
+"""
+
 # TODO
 # 1. Implement ETL pipeline
 # 2. Implement Feature selection algorithm

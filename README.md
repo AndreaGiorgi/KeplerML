@@ -13,7 +13,7 @@ Requirements
 Improvement from original implementation
 ------------
 
-The originial implementation of this project was made by Misra, and it is located at this repository (https://github.com/rkmisra/cs229_project). 
+The original implementation of this project was made by Misra, and it is located at this repository (https://github.com/rkmisra/cs229_project). 
 
 How to use
 ------------
