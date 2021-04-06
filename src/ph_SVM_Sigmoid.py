@@ -80,6 +80,9 @@ def get_model(X,y):
     
     temp_model = svm.SVC(kernel='sigmoid')
     
+## Non funziona la feature selction, va trovato un nuovo algoirmto
+## Errore: Temperatura predetta
+
     sfs = SequentialFeatureSelector(temp_model, n_features_to_select=12)
     sfs.fit(X,y)
     X_new = sfs.transform(X)
