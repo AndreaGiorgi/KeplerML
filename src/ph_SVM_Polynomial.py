@@ -9,11 +9,12 @@ import numpy as np
 from sklearn.model_selection import StratifiedKFold
 from sklearn import svm
 from sklearn.feature_selection import RFECV
+from sklearn.preprocessing import StandardScaler
 
 # TODO
 # 1. Implement ETL pipeline
 # 2. Implement Feature selection algorithm
-# 3. Implement SVM model with Polynomial Kernel
+# 3. Implement SVM model with Polynomial Kernel (MUST Normalize the dataset)
 # 4. Results visualization
 
 planetary_stellar_parameter_indexes = (2,   # kepoi_name:      KOI Name
