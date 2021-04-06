@@ -5,7 +5,7 @@
 """
 
 # TODO
-# 1. Implement ETL pipeline
+# 1. Implement ELT pipeline
 # 2. Implement Feature selection algorithm
 # 3. Implement Feature cleaning, normalization and correction
 # 4. Implement Data visualization for analysis
