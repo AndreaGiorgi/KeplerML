@@ -392,7 +392,7 @@ def predict_on_new_kepler_data(kepler_data_file, kernel):
     number_of_habitable_planets = 0
     for i in range(len(y_predicated)):
         if y_predicated[i] > 0:
-            habitable_planet_koi = planets_from_kepler[i]["kepoi_name"].decode("utf-8")
+            habitable_planet_koi = planets_from_kepler[i]["kepoi_name"]
             planet_temperature = planets_from_kepler[i]["koi_teq"] - 273.15
             total_temperature += planet_temperature
             planet_radius = planets_from_kepler[i]["koi_prad"] 

@@ -14,8 +14,9 @@ from sklearn.preprocessing import StandardScaler
 # TODO
 # 1. Implement ETL pipeline
 # 2. Implement Feature selection algorithm
-# 3. Implement SVM model with Polynomial Kernel (MUST Normalize the dataset)
-# 4. Results visualization
+# 3. Implement Dataset normalization with Standard Scaling (StandardScaler)
+# 4. Implement SVM model with Polynomial Kernel
+# 5. Results visualization
 
 planetary_stellar_parameter_indexes = (2,   # kepoi_name:      KOI Name
                                        15,  # koi period,      Orbital Period [days]
