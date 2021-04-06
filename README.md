@@ -10,10 +10,13 @@ Purpose of this project was to process data produced by NASA's Kepler mission ab
 Requirements
 ------------
 
-Improvement from original implementation
+Original implementation
 ------------
 
 The original implementation of this project was made by Misra, and it is located at this repository (https://github.com/rkmisra/cs229_project). 
+
+Contributions to the Project
+------------
 
 How to use
 ------------
