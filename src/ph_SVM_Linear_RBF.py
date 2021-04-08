@@ -10,12 +10,13 @@ import numpy as np
 from sklearn.model_selection import StratifiedKFold
 from sklearn import svm
 from sklearn.feature_selection import RFECV
+from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import confusion_matrix  
 import matplotlib.pyplot as plt       
 
 TRAIN_DATA = 0.5 
 DEV_DATA = 0.2 
-BEST_FEATURE_SELECTION_LOOP_COUNT=10
+BEST_FEATURE_SELECTION_LOOP_COUNT= 10
 
 #Index is 0 based
 # Planetary and Stellar parameters    
@@ -75,7 +76,9 @@ trained SVM with linear kernel
 '''
 def get_linear_svm_kernel_with_feature_reduction(X, y):
     print('Running recursive feature elimination with cross validation with linear SVM')
-    svc = svm.SVC(kernel='linear', class_weight = 'balanced')
+   
+    svc = svm.SVC(C = 1, kernel='linear', class_weight = 'balanced')
+    svc.fit(X,y)
     rfecv = RFECV(estimator=svc, step=1, cv=StratifiedKFold(5),
               scoring='accuracy')
     rfecv.fit(X, y)
@@ -112,10 +115,6 @@ def test_feature_reduction():
     
     print('Training Error ' , error)    
 
-                                         
-def get_svm():
-    return svm.SVC(kernel='rbf', gamma=10, class_weight = 'balanced')
-
 def select_features(from_data, to_data, feature_indexes):
     for i in feature_indexes:
         to_data = np.column_stack((to_data, from_data[i])) 
@@ -147,7 +146,8 @@ def get_X_Y(habitable, non_habitable, feature_indexes, start, width):
     return X, Y 
 
 def do_svm(X_train, Y_train, X_predict):
-    clf = get_svm()
+    
+    clf = svm.SVC(C = 1, kernel='rbf', gamma = 10, class_weight = 'balanced')
     clf.fit(X_train, Y_train)
         
     y_predicted = clf.predict(X_predict) 
@@ -285,7 +285,6 @@ def find_best_features():
             index +=1
             
             dev_error,_,_ = get_test_error(habitable_planets, non_habitable_planets, key, 0.0, TRAIN_DATA, TRAIN_DATA, DEV_DATA)
-#            print("\nFeature set = ", key , " number of times selected = ", value, " and dev set error ", dev_error) 
             feature_label = []
             for feature in key:
                 feature_label.append(planetary_stellar_parameter_cols_dict[feature])
@@ -343,7 +342,7 @@ def test_features():
         
 def get_trained_model(kernel):
      if kernel == 'rbf':
-         best_features, habitable_planets,non_habitable_planets  = find_best_features() 
+         best_features, habitable_planets, non_habitable_planets  = find_best_features() 
      else:
          habitable_planets , non_habitable_planets = load_training_planets_data() 
          best_features = planetary_stellar_parameter_cols
@@ -358,8 +357,10 @@ def get_trained_model(kernel):
      Y_train = np.append(habitable_slice_features[:,0], non_habitable_slice_features[:,0]) 
      
      if kernel == 'rbf':
-         clf = get_svm()
-         clf.fit(X_train, Y_train)
+        param_grid = {'C': [1, 5, 10], 'gamma': [10, 'auto', 'scale'],'kernel': ['rbf'], 'class_weight': ['balanced']}
+        clf = GridSearchCV(svm.SVC(), param_grid, refit=True, verbose=2)
+        clf.fit(X_train,Y_train)
+        print(clf.best_params_)
      else:
          clf = get_linear_svm_kernel_with_feature_reduction(X_train, Y_train) 
      
