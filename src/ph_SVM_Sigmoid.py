@@ -115,7 +115,7 @@ def dataset_loading():
     habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
     dataset = pd.concat([dataset, habitable_planets])
     
-    dataset.insert(1, "Habitable", 0, True)
+    dataset.insert(1, "Habitable", -1, True)
     hab_list = habitable_planets["kepoi_name"].tolist()
     for hab_id in hab_list:
         dataset['Habitable'] = np.where(dataset['kepoi_name'] == hab_id, 1, dataset['Habitable'])
