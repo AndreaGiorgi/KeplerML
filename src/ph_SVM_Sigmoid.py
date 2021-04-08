@@ -11,7 +11,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import classification_report
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
-import matplotlib.pyplot as plt  
+import matplotlib.pyplot as plt
 
 # TODO 
 # Use cumulative_NEW as dataset
@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 # Visualization NEEDED
 #
 
-planetary_stellar_parameter_indexes = (2,   # kepoi_name:      KOI Name
+planetary_stellar_parameter_indexes = (2,  # kepoi_name:      KOI Name
                                        15,  # koi period,      Orbital Period [days]
                                        42,  # koi_ror:         Planet-Star Radius Ratio
                                        45,  # koi_srho:        Fitted Stellar Density [g/cm**3] -
@@ -37,56 +37,65 @@ planetary_stellar_parameter_indexes = (2,   # kepoi_name:      KOI Name
                                        90,  # koi_slogg:       Stellar Surface Gravity [log10(cm/s**2)]
                                        93,  # koi_smet:        Stellar Metallicity [dex]
                                        96,  # koi_srad:        Stellar Radius [Solar radii]
-                                       99   # koi_smass:       Stellar Mass [Solar mass]
+                                       99  # koi_smass:       Stellar Mass [Solar mass]
                                        )
-#Names of columns from kepler data
-planetary_stellar_parameter_cols = (   "koi_period",    # koi_period       Orbital Period [days]
-                                       "koi_ror",       # koi_ror:         Planet-Star Radius Ratio
-                                       "koi_srho",      # koi_srho:        Fitted Stellar Density [g/cm**3] -
-                                       "koi_prad",      # koi_prad:        Planetary Radius [Earth radii]
-                                       "koi_sma",       # koi_sma:         Orbit Semi-Major Axis [AU]
-                                       "koi_teq",       # koi_teq:         Equilibrium Temperature [K]
-                                       "koi_insol",     # koi_insol:       Insolation Flux [Earth flux]
-                                       "koi_dor",       # koi_dor:         Planet-Star Distance over Star Radius
-                                       "koi_count",     # koi_count:       Number of Planet 
-                                       "koi_steff",     # koi_steff:       Stellar Effective Temperature [K] 
-                                       "koi_slogg",     # koi_slogg:       Stellar Surface Gravity [log10(cm/s**2)]
-                                       "koi_smet",      # koi_smet:        Stellar Metallicity [dex]
-                                       "koi_srad",      # koi_srad:        Stellar Radius [Solar radii]
-                                       "koi_smass"      # koi_smass:       Stellar Mass [Solar mass]
-                                       )
-                                       
-planetary_stellar_parameter_cols_dict = {   "koi_period":   "Orbital Period",
-                                       "koi_ror":     "Planet-Star Radius Ratio",
-                                       "koi_srho":      "Fitted Stellar Density",
-                                       "koi_prad":     "Planetary Radius",
-                                       "koi_sma":      "Orbit Semi-Major Axis",
-                                       "koi_teq":       "Equilibrium Temperature",
-                                       "koi_insol":     "Insolation Flux",
-                                       "koi_dor":       "Planet-Star Distance over Star Radius",
-                                       "koi_count":     "Number of Planet" ,
-                                       "koi_steff":     "Stellar Effective Temperature" ,
-                                       "koi_slogg":     "Stellar Surface Gravity",
-                                       "koi_smet":      "Stellar Metallicity",
-                                       "koi_srad":      "Stellar Radius",
-                                       "koi_smass":      "Stellar Mass"
-                                       }
+# Names of columns from kepler data
+planetary_stellar_parameter_cols = ("koi_period",  # koi_period       Orbital Period [days]
+                                    "koi_ror",  # koi_ror:         Planet-Star Radius Ratio
+                                    "koi_srho",  # koi_srho:        Fitted Stellar Density [g/cm**3] -
+                                    "koi_prad",  # koi_prad:        Planetary Radius [Earth radii]
+                                    "koi_sma",  # koi_sma:         Orbit Semi-Major Axis [AU]
+                                    "koi_teq",  # koi_teq:         Equilibrium Temperature [K]
+                                    "koi_insol",  # koi_insol:       Insolation Flux [Earth flux]
+                                    "koi_dor",  # koi_dor:         Planet-Star Distance over Star Radius
+                                    "koi_count",  # koi_count:       Number of Planet
+                                    "koi_steff",  # koi_steff:       Stellar Effective Temperature [K]
+                                    "koi_slogg",  # koi_slogg:       Stellar Surface Gravity [log10(cm/s**2)]
+                                    "koi_smet",  # koi_smet:        Stellar Metallicity [dex]
+                                    "koi_srad",  # koi_srad:        Stellar Radius [Solar radii]
+                                    "koi_smass"  # koi_smass:       Stellar Mass [Solar mass]
+                                    )
+
+planetary_stellar_parameter_cols_dict = {"koi_period": "Orbital Period",
+                                         "koi_ror": "Planet-Star Radius Ratio",
+                                         "koi_srho": "Fitted Stellar Density",
+                                         "koi_prad": "Planetary Radius",
+                                         "koi_sma": "Orbit Semi-Major Axis",
+                                         "koi_teq": "Equilibrium Temperature",
+                                         "koi_insol": "Insolation Flux",
+                                         "koi_dor": "Planet-Star Distance over Star Radius",
+                                         "koi_count": "Number of Planet",
+                                         "koi_steff": "Stellar Effective Temperature",
+                                         "koi_slogg": "Stellar Surface Gravity",
+                                         "koi_smet": "Stellar Metallicity",
+                                         "koi_srad": "Stellar Radius",
+                                         "koi_smass": "Stellar Mass"
+                                         }
+
 
 def dataset_preprocessing():
-    
-    dataset = pd.read_csv('data/cumulative_NEW.csv')
-    habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
+    dataset = pd.read_csv('../data/cumulative_NEW.csv')
+    habitable_planets = pd.read_csv('../data/habitable_planets_detailed_list.csv')
     dataset = pd.concat([dataset, habitable_planets])
     
     dataset.insert(1, "Habitable", 0, True)
     hab_list = habitable_planets["kepoi_name"].tolist()
+<<<<<<< HEAD
     for id in hab_list:
         dataset['Habitable'] = np.where(dataset['kepoi_name'] == id, 1, dataset['Habitable'])
     
+=======
+    for hab_id in hab_list:
+        dataset['Habitable'] = np.where(dataset['kepoi_name'] == hab_id, 1, dataset['Habitable'])
+
+    print(dataset.Habitable.value_counts())
+>>>>>>> 51215aa38106aa4f7f8a7e1bc74d8904a0f2a84b
     dataset = dataset.drop_duplicates(subset=['kepoi_name'], keep='first')
+
 
 
 def main():
     dataset = dataset_preprocessing()
-   
+
+
 main()
