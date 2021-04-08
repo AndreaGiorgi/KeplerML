@@ -80,16 +80,10 @@ def dataset_preprocessing():
     
     dataset.insert(1, "Habitable", 0, True)
     hab_list = habitable_planets["kepoi_name"].tolist()
-<<<<<<< HEAD
-    for id in hab_list:
-        dataset['Habitable'] = np.where(dataset['kepoi_name'] == id, 1, dataset['Habitable'])
-    
-=======
     for hab_id in hab_list:
         dataset['Habitable'] = np.where(dataset['kepoi_name'] == hab_id, 1, dataset['Habitable'])
 
     print(dataset.Habitable.value_counts())
->>>>>>> 51215aa38106aa4f7f8a7e1bc74d8904a0f2a84b
     dataset = dataset.drop_duplicates(subset=['kepoi_name'], keep='first')
 
 
