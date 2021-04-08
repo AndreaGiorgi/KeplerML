@@ -83,10 +83,9 @@ def dataset_preprocessing():
     for hab_id in hab_list:
         dataset['Habitable'] = np.where(dataset['kepoi_name'] == hab_id, 1, dataset['Habitable'])
 
-    print(dataset.Habitable.value_counts())
+
     dataset = dataset.drop_duplicates(subset=['kepoi_name'], keep='first')
-
-
+    print(dataset.Habitable.value_counts())
 
 def main():
     dataset = dataset_preprocessing()
