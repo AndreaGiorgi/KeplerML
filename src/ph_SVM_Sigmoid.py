@@ -6,6 +6,7 @@
 import itertools
 import argparse
 import numpy as np
+import pandas as pd
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import classification_report
 from sklearn import svm
@@ -71,3 +72,23 @@ planetary_stellar_parameter_cols_dict = {   "koi_period":   "Orbital Period",
                                        "koi_smass":      "Stellar Mass"
                                        }
 
+def main():
+    dataset = pd.read_csv('data/cumulative_NEW.csv')
+    print(dataset.head())
+    dataset.insert(1, "Habitable", 0, True)
+    habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
+    print(habitable_planets.head())
+    
+    for p in dataset:
+        for p2 in habitable_planets:
+            if p['kepoi_name'] == p2['kepoi_name']:
+        
+    
+    dataset['Habitable'] = np.where(dataset['kepoi_name'] is habitable_planets['kepoi_name'], 1, dataset['Habitable'])
+    print(dataset.Habitable.unique())
+                
+        
+    
+    
+    
+main()
