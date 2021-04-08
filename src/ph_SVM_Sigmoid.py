@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-@author: Andrea Giorgi
+@author: 
 """
 import itertools
 import argparse
