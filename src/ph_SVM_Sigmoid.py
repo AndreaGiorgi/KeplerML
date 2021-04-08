@@ -75,17 +75,22 @@ planetary_stellar_parameter_cols_dict = {   "koi_period":   "Orbital Period",
 def main():
     dataset = pd.read_csv('data/cumulative_NEW.csv')
     print(dataset.head())
-    dataset.insert(1, "Habitable", 0, True)
     habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
-    print(habitable_planets.head())
-    
+    print(len(habitable_planets))
+    dataset = pd.concat([dataset, habitable_planets])
+    print(len(dataset))
+    dataset.insert(1, "Habitable", 0, True)
     hab_list = habitable_planets["kepoi_name"].tolist()
     for id in hab_list:
         dataset['Habitable'] = np.where(dataset['kepoi_name'] == id, 1, dataset['Habitable'])
-    print(dataset.Habitable.unique())
+    
+    print(dataset.Habitable.value_counts())
+    print(len(dataset))
+    dataset = dataset.drop_duplicates(subset=['kepoi_name'])
+    print(len(dataset))
+    print(dataset.Habitable.value_counts())
+   
+    
+    
                 
-        
-    
-    
-    
 main()
