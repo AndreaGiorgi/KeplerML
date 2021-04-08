@@ -12,11 +12,6 @@ from sklearn import svm
 from sklearn.model_selection import GridSearchCV
 import matplotlib.pyplot as plt  
 
-TRAIN_DATA = 0.5
-DEV_DATA = 0.3
-BEST_FEATURE_SELECTION_LOOP_COUNT= 20
-
-
 # TODO 
 # Use cumulative_NEW as dataset
 # Add Labels [-1, 1] using habitable and non_habitable lists
