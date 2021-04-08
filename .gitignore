@@ -149,3 +149,4 @@ dmypy.json
 
 # Project specific ignore
 *.h5
+*.xml
