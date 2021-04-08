@@ -79,12 +79,9 @@ def main():
     habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
     print(habitable_planets.head())
     
-    for p in dataset:
-        for p2 in habitable_planets:
-            if p['kepoi_name'] == p2['kepoi_name']:
-        
-    
-    dataset['Habitable'] = np.where(dataset['kepoi_name'] is habitable_planets['kepoi_name'], 1, dataset['Habitable'])
+    hab_list = habitable_planets["kepoi_name"].tolist()
+    for id in hab_list:
+        dataset['Habitable'] = np.where(dataset['kepoi_name'] == id, 1, dataset['Habitable'])
     print(dataset.Habitable.unique())
                 
         
