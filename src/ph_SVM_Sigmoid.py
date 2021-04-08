@@ -4,10 +4,8 @@
 @authors: Andrea Giorgi and Gianluca De Angelis
 """
 
-import argparse
 import numpy as np
 import pandas as pd
-import seaborn as sns
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import train_test_split
@@ -18,8 +16,8 @@ import matplotlib.pyplot as plt
 plt.rcParams.update({'figure.max_open_warning': 0})
 
 # TODO 
-# Use cumulative_NEW as dataset
-# Add Labels [-1, 1] using habitable and non_habitable lists
+# Use cumulative_NEW as dataset DONE
+# Add Labels [-1, 1] using habitable and non_habitable lists DONE
 # Split Dataset in training, validation, test sets
 # Normalize datasets wince Sigmoid requires data in range [0,1]
 # Clean Dataset and preprocess + feature engineering
@@ -78,6 +76,15 @@ planetary_stellar_parameter_cols_dict = {"koi_period": "Orbital Period",
 
 def dataset_processing(dataset):
     
+    ## Drop all columns that are not listed in Planetary columns
+    
+    planetary_stellar_features = ["Habitable", "koi_period", "koi_ror", "koi_srho", "koi_prad", 
+                                  "koi_sma", "koi_teq", "koi_insol", "koi_dor", "koi_count", 
+                                  "koi_steff", "koi_slogg", "koi_smet", "koi_srad", "koi_smass"]
+    dataset = dataset[planetary_stellar_features]
+    
+    ## Visualize and fill all missing and NaN data
+    
     missing_data = dataset.isnull()
     for column in dataset:
         print(column)
@@ -89,8 +96,18 @@ def dataset_processing(dataset):
         print(column)
         print(NaN_data[column].value_counts())
         print('')
+        
+    dataset = dataset.fillna(0)
 
-    return dataset
+    ## Now we can analyze correlation between Habitable and remaining features
+    
+    correlation = dataset.corr()
+    correlation_target = abs(correlation["Habitable"])
+    features = correlation_target[correlation_target >= 0.05]
+    print(features)
+    
+    
+    return dataset, features
 
 
 def dataset_loading():
@@ -108,7 +125,7 @@ def dataset_loading():
 
 def main():
     raw_dataset = dataset_loading()
-    dataset = dataset_processing(raw_dataset)
+    dataset, features = dataset_processing(raw_dataset)
 
 
 main()
