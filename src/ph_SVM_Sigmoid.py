@@ -77,14 +77,14 @@ def dataset_preprocessing():
     dataset = pd.read_csv('data/cumulative_NEW.csv')
     habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
     dataset = pd.concat([dataset, habitable_planets])
+    
     dataset.insert(1, "Habitable", 0, True)
     hab_list = habitable_planets["kepoi_name"].tolist()
     for id in hab_list:
         dataset['Habitable'] = np.where(dataset['kepoi_name'] == id, 1, dataset['Habitable'])
     
-    print(dataset.Habitable.value_counts())
     dataset = dataset.drop_duplicates(subset=['kepoi_name'], keep='first')
-    print(dataset.Habitable.value_counts())
+
 
 def main():
     dataset = dataset_preprocessing()
