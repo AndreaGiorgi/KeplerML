@@ -6,7 +6,7 @@
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import train_test_split
 from sklearn import svm
@@ -106,8 +106,8 @@ def dataset_processing(dataset):
     features = correlation_target[correlation_target >= 0.05]
     print(features)
     
-    
-    return dataset, features
+    selected = ['koi_sma', 'koi_teq', 'koi_steff', 'koi_slogg', 'koi_smass']    
+    return dataset, selected
 
 
 def dataset_loading():
@@ -123,9 +123,30 @@ def dataset_loading():
 
     return dataset
 
+#def get_SVM(X_train, y_train):
+#        param_grid = {'C': [0.0001, 0.001, 0.01], 'gamma': ['auto', 'scale'],'kernel': ['sigmoid'], 'class_weight': ['balanced']}
+#        clf = GridSearchCV(svm.SVC(), param_grid, refit=True, verbose=2)
+#        clf.fit(X_train,y_train)
+#        print(clf.best_params_)
+#        return clf
+
 def main():
     raw_dataset = dataset_loading()
     dataset, features = dataset_processing(raw_dataset)
+    
+    y = dataset.Habitable
+    X = dataset[features]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
+    #clf = get_SVM(X_train, y_train)
+    clf = svm.SVC(C=0.001, kernel='sigmoid', gamma='auto', class_weight='balanced')
+    clf.fit(X_train, y_train)
+    y_pred = clf.predict(X_test)
+    
+    print('Accuracy Score : ' + str(accuracy_score(y_test, y_pred)))
+    print('Precision Score : ' + str(precision_score(y_test, y_pred)))
+    print('Recall Score : ' + str(recall_score(y_test, y_pred)))
+    print('F1 Score : ' + str(f1_score(y_test, y_pred)))
+    
 
 
 main()
