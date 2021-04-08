@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-@author: 
+@author: Andrea Giorgi
 """
-import itertools
+
 import argparse
 import numpy as np
 import pandas as pd
+import seaborn as sns
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import classification_report
+from sklearn.model_selection import train_test_split
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
 import matplotlib.pyplot as plt
+
+plt.rcParams.update({'figure.max_open_warning': 0})
 
 # TODO 
 # Use cumulative_NEW as dataset
@@ -72,8 +76,24 @@ planetary_stellar_parameter_cols_dict = {"koi_period": "Orbital Period",
                                          "koi_smass": "Stellar Mass"
                                          }
 
+def dataset_processing(dataset):
+    
+    missing_data = dataset.isnull()
+    for column in dataset:
+        print(column)
+        print(missing_data[column].value_counts())
+        print('')
+        
+    NaN_data = dataset.isna()
+    for column in dataset:
+        print(column)
+        print(NaN_data[column].value_counts())
+        print('')
 
-def dataset_preprocessing():
+    return dataset
+
+
+def dataset_loading():
     dataset = pd.read_csv('data/cumulative_NEW.csv')
     habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
     dataset = pd.concat([dataset, habitable_planets])
@@ -82,13 +102,13 @@ def dataset_preprocessing():
     hab_list = habitable_planets["kepoi_name"].tolist()
     for hab_id in hab_list:
         dataset['Habitable'] = np.where(dataset['kepoi_name'] == hab_id, 1, dataset['Habitable'])
-
-
     dataset = dataset.drop_duplicates(subset=['kepoi_name'], keep='first')
-    print(dataset.Habitable.value_counts())
+
+    return dataset
 
 def main():
-    dataset = dataset_preprocessing()
+    raw_dataset = dataset_loading()
+    dataset = dataset_processing(raw_dataset)
 
 
 main()
