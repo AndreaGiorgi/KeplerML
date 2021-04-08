@@ -74,8 +74,8 @@ planetary_stellar_parameter_cols_dict = {"koi_period": "Orbital Period",
 
 
 def dataset_preprocessing():
-    dataset = pd.read_csv('../data/cumulative_NEW.csv')
-    habitable_planets = pd.read_csv('../data/habitable_planets_detailed_list.csv')
+    dataset = pd.read_csv('data/cumulative_NEW.csv')
+    habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
     dataset = pd.concat([dataset, habitable_planets])
     
     dataset.insert(1, "Habitable", 0, True)
