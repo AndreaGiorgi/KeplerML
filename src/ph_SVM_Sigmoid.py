@@ -4,26 +4,19 @@
 @authors: Andrea Giorgi and Gianluca De Angelis
 """
 
+import argparse
 import numpy as np
 import pandas as pd
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, plot_confusion_matrix
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import train_test_split
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
-import matplotlib.pyplot as plt
-
-plt.rcParams.update({'figure.max_open_warning': 0})
-
-# TODO 
-# Use cumulative_NEW as dataset DONE
-# Add Labels [-1, 1] using habitable and non_habitable lists DONE
-# Split Dataset in training, validation, test sets
-# Normalize datasets wince Sigmoid requires data in range [0,1]
-# Clean Dataset and preprocess + feature engineering
-# GridSearchCV for params tuning
-# Visualization NEEDED
-#
+from sklearn.preprocessing import LabelEncoder
+from sklearn.utils import shuffle
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 planetary_stellar_parameter_indexes = (2,  # kepoi_name:      KOI Name
                                        15,  # koi period,      Orbital Period [days]
@@ -74,6 +67,83 @@ planetary_stellar_parameter_cols_dict = {"koi_period": "Orbital Period",
                                          "koi_smass": "Stellar Mass"
                                          }
 
+
+def data_visualization_analysis(planets, features, clf, X_test, predictions, test_values):
+    
+    X_distance_from_parent_star = []
+    Y_surface_temprature = []
+    S_planet_radius = []
+    colors = []
+    color_space = 255*255*255
+    
+    planets = planets.fillna(0)
+    
+    total_distance = 0
+    total_temperature = 0
+    number_of_habitable_planets = 0
+    for i in range(len(predictions)):
+        if predictions[i] > 0:
+            habitable_planet_koi = planets.iloc[i, 2] #kepoi_name
+            planet_temperature = planets.iloc[i, 58]  #koi_teq
+            total_temperature += planet_temperature - 273.15
+            planet_radius = planets.iloc[i, 49] #koi_prad
+            planet_star_distance = planets.iloc[i, 64] #koi_dor
+            total_distance += planet_star_distance
+            number_of_habitable_planets += 1
+            print('Predicted Habitable planet koi = ',habitable_planet_koi, ", Equilibrium Temperature in Celsius = ", planet_temperature, ", Planet radius (Earth) = ", planet_radius)         
+            X_distance_from_parent_star.append(planet_star_distance)
+            Y_surface_temprature.append(planet_temperature)
+            S_planet_radius.append(planet_radius)
+            colors.append(np.random.randint(color_space))
+    
+    print("features used were ", features)
+    print("Number of habitable planets detected " , number_of_habitable_planets)
+    mean_distance = total_distance/number_of_habitable_planets
+    print('Mean distance of habitable planets ' , mean_distance)
+    var_distance = np.sqrt(np.sum(np.square(X_distance_from_parent_star - mean_distance))/number_of_habitable_planets)
+    print('Standard deviation of distance of habitable planets ' , var_distance)
+    
+    mean_temp = total_temperature/number_of_habitable_planets
+    print('Mean temperature of habitable planets ' , mean_temp)
+    var_temp = np.sqrt(np.sum(np.square(Y_surface_temprature - mean_temp))/number_of_habitable_planets)
+    print('Standard deviation temperature of habitable planets ' , var_temp)
+    
+    plt.scatter(X_distance_from_parent_star, Y_surface_temprature, s = S_planet_radius, c = colors)
+    plt.xlabel('Distance from parent star in the unit of star\'s radius')
+    plt.ylabel('Planetary Equilibrium Temperature in Celsius')
+    plt.show()
+    
+    print('Accuracy Score : ' + str(accuracy_score(test_values, predictions)))
+    print('Precision Score : ' + str(precision_score(test_values, predictions)))
+    print('Recall Score : ' + str(recall_score(test_values, predictions)))
+    print('F1 Score : ' + str(f1_score(test_values, predictions)))
+    plot_confusion_matrix(clf, X_test, test_values, cmap=plt.cm.YlGn)
+    plt.show()
+
+
+def dataset_normalization(x_train, x_test, method):
+    
+    if method == 'standard':
+        scaler = StandardScaler()
+        normalized_train = scaler.fit_transform(x_train)
+        normalized_test = scaler.fit_transform(x_test)
+    else: 
+        scaler = MinMaxScaler()
+        normalized_train = scaler.fit_transform(x_train)
+        normalized_test = scaler.fit_transform(x_test)
+    return normalized_train, normalized_test
+
+def dataset_encoding(data):
+
+    X = data
+    features_to_encode = X.dtypes == object
+    columns = X.columns[features_to_encode].tolist()
+    le = LabelEncoder()
+    X[columns] = X[columns].apply(lambda col: le.fit_transform(col))
+
+    return X
+
+
 def dataset_processing(dataset):
     
     ## Drop all columns that are not listed in Planetary columns
@@ -99,19 +169,21 @@ def dataset_processing(dataset):
         
     dataset = dataset.fillna(0)
 
-    ## Now we can analyze correlation between Habitable and remaining features
-    
+    ## Now we can analyze correlation between Habitable and remaining features (USELESS)
     correlation = dataset.corr()
-    correlation_target = abs(correlation["Habitable"])
-    features = correlation_target[correlation_target >= 0.05]
-    print(features)
+    sns.heatmap(correlation, 
+            xticklabels=correlation.columns.values,
+            yticklabels=correlation.columns.values)
     
-    selected = ['koi_sma', 'koi_teq', 'koi_steff', 'koi_slogg', 'koi_smass']    
-    return dataset, selected
+    selected = ['koi_prad','koi_insol']   #RBF feature selection on cumulative_test (C=5, balanced, gamma 10)
+    
+    encoded_dataset = dataset_encoding(dataset)
+    
+    return encoded_dataset, selected
 
 
 def dataset_loading():
-    dataset = pd.read_csv('data/cumulative_NEW.csv')
+    dataset = pd.read_csv('data/cumulative_test.csv')
     habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
     dataset = pd.concat([dataset, habitable_planets])
     
@@ -119,16 +191,20 @@ def dataset_loading():
     hab_list = habitable_planets["kepoi_name"].tolist()
     for hab_id in hab_list:
         dataset['Habitable'] = np.where(dataset['kepoi_name'] == hab_id, 1, dataset['Habitable'])
-    dataset = dataset.drop_duplicates(subset=['kepoi_name'], keep='first')
+    #dataset = dataset.drop_duplicates(subset=['kepoi_name'], keep='first')
 
+    #Shuffling dataset for avoiding habitable concat bias
+    dataset = shuffle(dataset)
+    dataset.reset_index(inplace=True, drop=True)
+    
     return dataset
 
-#def get_SVM(X_train, y_train):
-#        param_grid = {'C': [0.0001, 0.001, 0.01], 'gamma': ['auto', 'scale'],'kernel': ['sigmoid'], 'class_weight': ['balanced']}
-#        clf = GridSearchCV(svm.SVC(), param_grid, refit=True, verbose=2)
-#        clf.fit(X_train,y_train)
-#        print(clf.best_params_)
-#        return clf
+def get_SVM_Hyper(X_train, y_train):
+        param_grid = {'C': np.logspace(-3, 2, 3), 'gamma': np.logspace(-3, 1, 3), 'coef0': np.logspace(-3, 2, 3), 'kernel': ['sigmoid'], 'class_weight': ['balanced']}
+        clf = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(5), refit=True, verbose=1, scoring='accuracy')
+        clf.fit(X_train,y_train)
+        print(clf.best_params_, "Score: ", clf.best_score_)
+
 
 def main():
     raw_dataset = dataset_loading()
@@ -136,17 +212,19 @@ def main():
     
     y = dataset.Habitable
     X = dataset[features]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.33, random_state=42)
-    #clf = get_SVM(X_train, y_train)
-    clf = svm.SVC(C=0.001, kernel='sigmoid', gamma='auto', class_weight='balanced')
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=0)
+    #X_train, X_test = dataset_normalization(X_train, X_test, 'minmax')
+    get_SVM_Hyper(X_train, y_train) #C=0.001 Accuracy 0.99, Accuracy 0.976 with positive duplicates, Accuracy 0.058 with Recall 1.0
+
+    C_grid = input("Insert C value: \n")
+    coef0_grid = input("Insert coef0 value: \n")
+    gamma_grid = input("Insert gamma value: \n")
+    clf = svm.SVC(C=C_grid, kernel='sigmoid', coef0=coef0_grid, gamma=gamma_grid, class_weight='balanced')
     clf.fit(X_train, y_train)
     y_pred = clf.predict(X_test)
     
-    print('Accuracy Score : ' + str(accuracy_score(y_test, y_pred)))
-    print('Precision Score : ' + str(precision_score(y_test, y_pred)))
-    print('Recall Score : ' + str(recall_score(y_test, y_pred)))
-    print('F1 Score : ' + str(f1_score(y_test, y_pred)))
+    planets = raw_dataset.drop(columns=['Habitable'], axis=1)
     
-
+    data_visualization_analysis(planets, features, clf, X_test, y_pred, y_test)
 
 main()
