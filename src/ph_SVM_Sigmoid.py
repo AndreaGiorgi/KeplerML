@@ -76,7 +76,7 @@ def data_visualization_analysis(planets, features, predictions):
     colors = []
     color_space = 255*255*255
     
-    planets.fillna(0)
+    planets = planets.fillna(0)
     
     total_distance = 0
     total_temperature = 0
@@ -128,9 +128,11 @@ def dataset_normalization(x_train, x_test, method):
     return normalized_train, normalized_test
 
 def get_KPCA(dataset):
+    print(dataset.shape)
     KPCAtransformer = KernelPCA(n_components=3, kernel='sigmoid', gamma = 0.001)
     data = KPCAtransformer.fit_transform(dataset)
-    print(data.shape)    
+    print(data.shape)
+     
     return data
     
 def dataset_encoding(data):
@@ -208,7 +210,7 @@ def training_set_processing(dataset):
     return encoded_dataset, selected_features
 
 def datasets_loading():
-    non_habitable = pd.read_csv('data/non_habitable_planets_detailed_list_new.csv')
+    non_habitable = pd.read_csv('data/non_habitable_planets_confirmed_detailed_list.csv')
     habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
     training_set = pd.concat([non_habitable, habitable_planets])
 
@@ -238,8 +240,11 @@ def main():
     test_set = test_set_processing(raw_test)
     
     y_train = train_set.Habitable
-    X_train = train_set[features]
-    X_test = test_set[features]
+    #X_train = train_set[features]
+    #X_test = test_set[features]
+    
+    X_train = train_set
+    X_test = test_set
     
     X_train, X_test = dataset_normalization(X_train, X_test, 'standard')
     X_train = get_KPCA(X_train)
