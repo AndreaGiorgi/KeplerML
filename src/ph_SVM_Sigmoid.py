@@ -127,28 +127,11 @@ def dataset_normalization(x_train, x_test, method):
         
     return normalized_train, normalized_test
 
-def get_pca(X_data):
-    NUM_OF_PCF = 6
-    m,n = X_data.shape
-    mean_vector = np.sum(X_data, axis = 0)/m
-    mean_mat = np.repeat(mean_vector.reshape(1,n), m, axis = 0)
-    
-    X_data -= mean_mat  
-    
-    sigma = np.sqrt(np.sum(np.square(X_data), axis = 0)/m)
-    sigma_mat = np.repeat(sigma.reshape(1,n), m, axis = 0)
-    
-    X_norm = X_data/sigma_mat
-    
-    XX = np.dot(X_norm, X_norm.T)
-    
-    rows,cols = XX.shape
-    
-    eigen_values, eigen_vectors = sp.linalg.eigh(XX, eigvals=(cols - NUM_OF_PCF , cols-1))
-    
-    PCA_X_data = np.dot(eigen_vectors.T , XX  )
-    
-    return PCA_X_data.T
+def get_KPCA(dataset):
+    KPCAtransformer = KernelPCA(n_components=3, kernel='sigmoid', gamma = 0.001)
+    data = KPCAtransformer.fit_transform(dataset)
+    print(data.shape)    
+    return data
     
 def dataset_encoding(data):
 
@@ -220,9 +203,9 @@ def training_set_processing(dataset):
     plt.show()
     
     selected_features = ['koi_period', 'koi_sma', 'koi_teq', 'koi_dor'] 
-    #encoded_dataset = dataset_encoding(dataset)
+    encoded_dataset = dataset_encoding(dataset)
     
-    return dataset, selected_features
+    return encoded_dataset, selected_features
 
 def datasets_loading():
     non_habitable = pd.read_csv('data/non_habitable_planets_detailed_list_new.csv')
@@ -258,12 +241,9 @@ def main():
     X_train = train_set[features]
     X_test = test_set[features]
     
-    #X_train = train_set
-    #X_test = test_set
-    
     X_train, X_test = dataset_normalization(X_train, X_test, 'standard')
-    X_train = get_pca(X_train)
-    X_test = get_pca(X_test)
+    X_train = get_KPCA(X_train)
+    X_test = get_KPCA(X_test)
     
     get_SVM_Hyper(X_train, y_train) 
     C_grid = float(input("Insert C value: \n"))
