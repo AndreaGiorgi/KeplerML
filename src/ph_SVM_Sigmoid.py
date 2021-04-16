@@ -13,7 +13,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import train_test_split
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
-from sklearn.decomposition import KernelPCA
+from sklearn.decomposition import KernelPCA, PCA
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import shuffle
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -127,9 +127,20 @@ def dataset_normalization(x_train, x_test, method):
         
     return normalized_train, normalized_test
 
-def get_KPCA(dataset):
+
+def get_PCA(dataset):
+    
     print(dataset.shape)
-    KPCAtransformer = KernelPCA(n_components=3, kernel='sigmoid', gamma = 0.001)
+    PCATransformer = PCA(n_components = 6, whiten = 'True', svd_solver = 'auto')
+    data = PCATransformer.fit_transform(dataset)
+    print(data.shape)
+    
+    return data
+
+def get_KPCA(dataset):
+    
+    print(dataset.shape)
+    KPCAtransformer = KernelPCA(n_components = 4, kernel='sigmoid', eigen_solver = 'arpack', random_state = 42)
     data = KPCAtransformer.fit_transform(dataset)
     print(data.shape)
      
@@ -203,62 +214,89 @@ def training_set_processing(dataset):
             xticklabels=correlation.columns.values,
             yticklabels=correlation.columns.values)
     plt.show()
-    
-    selected_features = ['koi_period', 'koi_sma', 'koi_teq', 'koi_dor'] 
-    encoded_dataset = dataset_encoding(dataset)
-    
-    return encoded_dataset, selected_features
+
+    return dataset
 
 def datasets_loading():
+    
     non_habitable = pd.read_csv('data/non_habitable_planets_confirmed_detailed_list.csv')
     habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
     training_set = pd.concat([non_habitable, habitable_planets])
 
-    training_set.insert(1, "Habitable", -1, True)
+    training_set.insert(1, "Habitable", 0, True)
     hab_list = habitable_planets["kepoi_name"].tolist()
     for hab_id in hab_list:
         training_set['Habitable'] = np.where(training_set['kepoi_name'] == hab_id, 1, training_set['Habitable'])
 
-    training_set = shuffle(training_set)
+    training_set = shuffle(training_set, random_state = 42)
     training_set.reset_index(inplace=True, drop=True)
     
     test_set = pd.read_csv('data/cumulative_new_data.csv')
-    test_set = shuffle(test_set)
+    test_set = shuffle(test_set, random_state = 42)
     test_set.reset_index(inplace=True, drop=True)
     
     return training_set, test_set
 
 def get_SVM_Hyper(X_train, y_train):
+    
         param_grid = {'C': np.logspace(-3, 2, 3), 'gamma': np.logspace(-3, 2, 3), 'coef0': np.logspace(-3, 2, 3), 'kernel': ['sigmoid'], 'class_weight': ['balanced']}
-        clf = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(5), refit=True, verbose=1, scoring='accuracy')
+        clf = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(10), refit=True, verbose=1, scoring = 'accuracy')
         clf.fit(X_train,y_train)
         print(clf.best_params_, "Accuracy Score: ", clf.best_score_)
+        
+        C_grid = float(input("Insert C value: \n"))
+        coef0_grid = float(input("Insert coef0 value: \n"))
+        gamma_grid = float(input("Insert gamma value: \n"))
+    
+        model = svm.SVC(C=C_grid, kernel='sigmoid', coef0=coef0_grid, gamma=gamma_grid, class_weight='balanced')
+        model.fit(X_train, y_train)
+        
+        return model
+ 
 
-def main():
-    raw_training, raw_test = datasets_loading()
-    train_set, features = training_set_processing(raw_training)
-    test_set = test_set_processing(raw_test)
+def get_train_test(train, test, normalization, dim_reduction):
     
-    y_train = train_set.Habitable
-    #X_train = train_set[features]
-    #X_test = test_set[features]
+    X_train = train.drop(labels = 'Habitable', axis = 1)
+    X_test = test
     
-    X_train = train_set
-    X_test = test_set
+    ## Dataset encodin using Label Encoder
     
-    X_train, X_test = dataset_normalization(X_train, X_test, 'standard')
-    X_train = get_KPCA(X_train)
-    X_test = get_KPCA(X_test)
     
-    get_SVM_Hyper(X_train, y_train) 
-    C_grid = float(input("Insert C value: \n"))
-    coef0_grid = float(input("Insert coef0 value: \n"))
-    gamma_grid = float(input("Insert gamma value: \n"))
+    ## Normalization with Standard Scaling
+    X_train, X_test = dataset_normalization(train, test, normalization)
     
-    clf = svm.SVC(C=C_grid, kernel='sigmoid', coef0=coef0_grid, gamma=gamma_grid, class_weight='balanced')
-    clf.fit(X_train, y_train)
-    y_pred = clf.predict(X_test)
+    ## Principal Component Analysis PCA or Kernel PCA KPCA
+    if dim_reduction == 'PCA':
+        X_train = get_PCA(X_train)
+        X_test = get_PCA(X_test)
+    else:
+        X_train = get_KPCA(X_train)
+        X_test = get_KPCA(X_test)
+        
+    return X_train, X_test
+         
+def prediction_pipeline():
     
-    data_visualization_analysis(raw_test, features, y_pred)
+    ## ETL
+    raw_training_set, raw_planets_set = datasets_loading()
+    training_set = training_set_processing(raw_training_set)
+    test_set = test_set_processing(raw_planets_set)
+    
+    ## Feature selection
+    features = ['koi_ror']
+    
+    ## X and y sets loading
+    y_train = training_set.Habitable
+    X_train, X_test = get_train_test(training_set, test_set, 'standard', 'PCA')
+    
+    ## SVM Model initialization
+    svm_model = get_SVM_Hyper(X_train, y_train)
+    
+    ## Predict habitable planets
+    y_predicted = svm_model.predict(X_test)
+    
+    ## Results visualization
+    data_visualization_analysis(raw_planets_set, features, y_predicted)
 
-main()
+if __name__ == "__main__":
+    prediction_pipeline()
