@@ -3,14 +3,15 @@
 """
 
 import numpy as np
+from numpy.core.numeric import Inf
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.model_selection import StratifiedKFold
+from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
 from sklearn.decomposition import KernelPCA, PCA
-from sklearn.preprocessing import LabelEncoder
 from sklearn.utils import shuffle
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
@@ -63,6 +64,9 @@ planetary_stellar_parameter_cols_dict = {"koi_period": "Orbital Period",
                                          "koi_smass": "Stellar Mass"
                                          }
 
+## Results visualization
+# Visualize prediction results in order to analize model behaviour and performances
+# TODO: Implement prediction check based on habitable parameters
 
 def data_visualization_analysis(planets, features, predictions):
     
@@ -76,11 +80,17 @@ def data_visualization_analysis(planets, features, predictions):
     
     total_distance = 0
     total_temperature = 0
+    minimum_temperature = 0
+    maximum_temperature = 0
     number_of_habitable_planets = 0
     for i in range(len(predictions)):
         if predictions[i] == 1:
             habitable_planet_koi = planets.iloc[i, 2] #kepoi_name
             planet_temperature = planets.iloc[i, 58] - 273.15  #koi_teq in Celsius 
+            if planet_temperature > maximum_temperature:
+                maximum_temperature = planet_temperature
+            elif planet_temperature < minimum_temperature:
+                minimum_temperature = planet_temperature
             total_temperature += planet_temperature
             planet_radius = planets.iloc[i, 49] #koi_prad
             planet_star_distance = planets.iloc[i, 64] #koi_dor
@@ -92,15 +102,17 @@ def data_visualization_analysis(planets, features, predictions):
             S_planet_radius.append(planet_radius)
             colors.append(np.random.randint(color_space))
     
-    print("features used were ", features)
-    print("Number of habitable planets detected " , number_of_habitable_planets)
+    print("Features used were: ", features)
+    print("Number of habitable planets detected: " , number_of_habitable_planets)
     mean_distance = total_distance/number_of_habitable_planets
-    print('Mean distance of habitable planets ' , mean_distance)
+    print('Mean distance of habitable planets: ' , mean_distance)
     var_distance = np.sqrt(np.sum(np.square(X_distance_from_parent_star - mean_distance))/number_of_habitable_planets)
-    print('Standard deviation of distance of habitable planets ' , var_distance)
+    print('Standard deviation of distance of habitable planets: ' , var_distance)
     
     mean_temp = total_temperature/number_of_habitable_planets
-    print('Mean temperature of habitable planets ' , mean_temp)
+    print('Minimum temperature of habitable planet: ' , minimum_temperature, " Celsius")
+    print('Maximum temperature of habitable planet: ' , maximum_temperature, " Celsius")   
+    print('Mean temperature of habitable planets: ' , mean_temp)
     var_temp = np.sqrt(np.sum(np.square(Y_surface_temprature - mean_temp))/number_of_habitable_planets)
     print('Standard deviation temperature of habitable planets ' , var_temp)
     
@@ -109,6 +121,9 @@ def data_visualization_analysis(planets, features, predictions):
     plt.ylabel('Planetary Equilibrium Temperature in Celsius')
     plt.show()
 
+## Dataset normalization algorihtms
+# 1. StandardScaling: Standardize features by removing the mean and scaling to unit variance 
+# 2. MinMax Scaling: Transform features by scaling each feature to a given range.
 
 def dataset_normalization(x_train, x_test, method):
     
@@ -123,24 +138,31 @@ def dataset_normalization(x_train, x_test, method):
         
     return normalized_train, normalized_test
 
+## Principal component analysis (PCA). 
+# Linear dimensionality reduction using Singular Value Decomposition SVD of the data to project it to a lower dimensional space. 
+# The input data is centered but not scaled for each feature before applying the SVD.
 
 def get_PCA(dataset):
     
-    print(dataset.shape)
-    PCATransformer = PCA(n_components = 4, whiten = 'True', svd_solver = 'auto')
+    PCATransformer = PCA(n_components = 6, whiten = 'True', svd_solver = 'auto')
     data = PCATransformer.fit_transform(dataset)
-    print(data.shape)
     
     return data
 
+## Kernel Principal component analysis (KPCA). 
+# Non-linear dimensionality reduction through the use of kernels, here we use sigmoid in order to be consistent with SVM kernel
+
 def get_KPCA(dataset):
     
-    print(dataset.shape)
-    KPCAtransformer = KernelPCA(n_components = 4, kernel='sigmoid', eigen_solver = 'arpack', random_state = 42)
+    KPCAtransformer = KernelPCA(n_components = 5, kernel='sigmoid', eigen_solver = 'arpack', random_state = 42)
     data = KPCAtransformer.fit_transform(dataset)
-    print(data.shape)
      
     return data
+
+## Test set preprocessing (ETL Pipeline)
+# 1. Loads dataset with planetary features 
+# 2. Checks for missing data and drops rows with missing data
+
 
 def test_set_processing(dataset):
         
@@ -165,6 +187,11 @@ def test_set_processing(dataset):
     
     return dataset
 
+## Training set preprocessing (ETL Pipeline)
+# 1. Loads dataset with planetary features 
+# 2. Checks for missing data and fillis rows with missing data with default 0 value 
+# 3. Calculates and plot features correlation for analisys purpose 
+
 def training_set_processing(dataset):
     
     ## Drop all columns that are not listed in Planetary columns
@@ -173,8 +200,6 @@ def training_set_processing(dataset):
                                   "koi_sma", "koi_teq", "koi_insol", "koi_dor", "koi_count", 
                                   "koi_steff", "koi_slogg", "koi_smet", "koi_srad", "koi_smass"]
     dataset = dataset[planetary_stellar_features]
-    
-    ## Visualize and fill all missing and NaN data
     
     missing_data = dataset.isnull()
     for column in dataset:
@@ -189,8 +214,7 @@ def training_set_processing(dataset):
         print('')
         
     dataset = dataset.fillna(0)
-
-    ## Now we can analyze correlation between Habitable and remaining features (USELESS but cool to see)
+    
     correlation = dataset.corr()
     correlation_target = abs(correlation["Habitable"])
     print(correlation_target)
@@ -201,13 +225,20 @@ def training_set_processing(dataset):
 
     return dataset
 
+## Dataset loading (ETL pipeline) 
+# 1. Load non habitable and habitable planets data 
+# 2. Concatenate them in training set and add prediction label Habitabile, default value -1 [Non Habitable]
+# 3. Set Habitable label to 1 for each confirmed habitable planet 
+# 4. Shuffle dataset in order to reduce order dependency 
+# 5. Load and shuffle test data, taken from cumulative keplero data
+
 def datasets_loading():
     
     non_habitable = pd.read_csv('data/non_habitable_planets_confirmed_detailed_list.csv')
     habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
     training_set = pd.concat([non_habitable, habitable_planets])
 
-    training_set.insert(1, "Habitable", 0, True)
+    training_set.insert(1, "Habitable", -1, True)
     hab_list = habitable_planets["kepoi_name"].tolist()
     for hab_id in hab_list:
         training_set['Habitable'] = np.where(training_set['kepoi_name'] == hab_id, 1, training_set['Habitable'])
@@ -226,12 +257,19 @@ def datasets_loading():
     
     return training_set, test_set
 
+## Support Vector Machine Hyperparameters estimation 
+# 1. Defines the paramaters grid 
+# 2. Use GridSearchCV to estimate the best parameters, it values them in order to achive highest accuracy 
+# 3. Show the best parameters and it allows to set manually svm parameters, based on estimated ones 
+# 4. Initialize optimized model and it fits the model on X_Train and y_train
+
 def get_SVM_Hyper(X_train, y_train):
     
-        param_grid = {'C': np.logspace(-3, 2, 3), 'gamma': np.logspace(-3, 2, 3), 'coef0': np.logspace(-3, 2, 3), 'kernel': ['sigmoid'], 'class_weight': ['balanced']}
-        clf = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(2), refit=True, verbose=1, scoring = 'accuracy')
-        clf.fit(X_train,y_train)
-        print(clf.best_params_, "Accuracy Score: ", clf.best_score_)
+        param_grid = {'C': np.logspace(-3, 2, 3), 'gamma': np.logspace(-3, 2, 3), 'coef0': np.logspace(-3, 2, 3), 
+                      'kernel': ['sigmoid'], 'class_weight': ['balanced']}
+        params_estimator = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(10), refit=True, verbose=1, scoring = 'accuracy')
+        params_estimator.fit(X_train,y_train)
+        print(params_estimator.best_params_, "\nAccuracy with estimated hyperparameters: ", params_estimator.best_score_)
         
         C_grid = float(input("Insert C value: \n"))
         coef0_grid = float(input("Insert coef0 value: \n"))
@@ -242,12 +280,22 @@ def get_SVM_Hyper(X_train, y_train):
         
         return model
  
+ ## Train and test set initializer 
+ # 1. Loads prediction label and train/test sets 
+ # 2. Applies Sequential Feature Selection algorithm in order to extract most important features 
+ # 3. Normalize X_train and X_test using standard scaling or MinMax scaling 
+ # 4. Applies dimensionality reduction technique PCA or KPCA
+ 
 def get_train_test(train, test, normalization, dim_reduction):
     
-    print(train.shape)
-    X_train = train.drop('Habitable', 1) ## DROPPALA DIOPORCO
-    print(X_train.shape) ## Perchè torna a 15 porcodio?
+    y_train = train.Habitable
+    X_train = train.drop('Habitable', 1)
     X_test = test
+    
+    sfs = SequentialFeatureSelector(estimator=svm.SVC(kernel='sigmoid'), cv=StratifiedKFold(10), direction='forward')
+    sfs.fit(X_train, y_train)
+    selected_features= X_train.columns[(sfs.get_support())]
+    X_train = X_train[selected_features]
     
     ## Normalization with Standard Scaling or MinMax scaling
     if normalization is not None:
@@ -261,7 +309,7 @@ def get_train_test(train, test, normalization, dim_reduction):
         X_train = get_KPCA(X_train)
         X_test = get_KPCA(X_test)
         
-    return X_train, X_test
+    return X_train, X_test, selected_features
          
 def prediction_pipeline():
     
@@ -270,13 +318,9 @@ def prediction_pipeline():
     training_set = training_set_processing(raw_training_set)
     test_set = test_set_processing(raw_planets_set)
     
-    ## Feature selection
-    ## TODO 
-    features = ['koi_ror']
-    
-    ## X and y sets loading
+    ## Feature selection and X and Y selection
     y_train = training_set.Habitable
-    X_train, X_test = get_train_test(training_set, test_set, 'standard', 'PCA')
+    X_train, X_test, features = get_train_test(training_set, test_set, 'standard', 'PCA')
     
     ## SVM Model initialization
     svm_model = get_SVM_Hyper(X_train, y_train)
