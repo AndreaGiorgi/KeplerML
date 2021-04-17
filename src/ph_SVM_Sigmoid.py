@@ -5,6 +5,7 @@
 import numpy as np
 from numpy.core.numeric import Inf
 import pandas as pd
+from scipy.sparse import data
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.model_selection import StratifiedKFold
@@ -66,7 +67,13 @@ planetary_stellar_parameter_cols_dict = {"koi_period": "Orbital Period",
 
 ## Results visualization
 # Visualize prediction results in order to analize model behaviour and performances
-# TODO: Implement prediction check based on habitable parameters
+# 1. Plot predicted habitable planets 
+# 2. Plot predicted habitable planets which respects habitable parameters
+#    Parameters are: 
+#       1. Planet-Star distance between [0.85, 1.7] AU
+#       2. Temperature between [200,600] Kelvin
+#       3. Planet radius between [0.5, 3.3] Earth radius
+
 
 def data_visualization_analysis(planets, features, predictions):
     
@@ -112,7 +119,7 @@ def data_visualization_analysis(planets, features, predictions):
     mean_temp = total_temperature/number_of_habitable_planets
     print('Minimum temperature of habitable planet: ' , minimum_temperature, " Celsius")
     print('Maximum temperature of habitable planet: ' , maximum_temperature, " Celsius")   
-    print('Mean temperature of habitable planets: ' , mean_temp)
+    print('Mean temperature of habitable planets: ' , mean_temp, " Celsius")
     var_temp = np.sqrt(np.sum(np.square(Y_surface_temprature - mean_temp))/number_of_habitable_planets)
     print('Standard deviation temperature of habitable planets ' , var_temp)
     
@@ -120,7 +127,36 @@ def data_visualization_analysis(planets, features, predictions):
     plt.xlabel('Distance from parent star')
     plt.ylabel('Planetary Equilibrium Temperature in Celsius')
     plt.show()
+    
+    X_distance_from_parent_star_verified = []
+    Y_surface_temprature_verified = []
+    S_planet_radius_verified = []
+    colors_verified = []
+    
+    minimum_temperature = 0
+    maximum_temperature = 0    
+    number_of_confirmed_habitable_planets = 0
+    
+    for i in range(len(predictions)):
+        if predictions[i] == 1:
+            habitable_planet_koi = planets.iloc[i, 2] #kepoi_name
+            planet_temperature = planets.iloc[i, 58] #koi_teq in Celsius 
+            planet_temperature_celsius = planets.iloc[i, 58] - 273.15  #koi_teq in Celsius 
+            planet_radius = planets.iloc[i, 49] #koi_prad
+            planet_star_distance = planets.iloc[i, 64] #koi_dor
+            number_of_confirmed_habitable_planets += 1
+            if 183 <= planet_star_distance <= 460 and 200 <= planet_temperature <= 600 and 0.5 <= planet_radius <= 3.3:
+                print('Predicted "confirmed" Habitable planet koi = ',habitable_planet_koi, ", Equilibrium Temperature in Celsius = ", planet_temperature_celsius, ", Planet radius (Earth) = ", planet_radius)         
+                X_distance_from_parent_star_verified.append(planet_star_distance)
+                Y_surface_temprature_verified.append(planet_temperature_celsius)
+                S_planet_radius_verified.append(planet_radius)
+                colors_verified.append(np.random.randint(color_space))
 
+    plt.scatter(X_distance_from_parent_star_verified, Y_surface_temprature_verified, s = S_planet_radius_verified, c = colors_verified)
+    plt.xlabel('Distance from parent star')
+    plt.ylabel('Planetary Equilibrium Temperature in Celsius')
+    plt.show()           
+    
 ## Dataset normalization algorihtms
 # 1. StandardScaling: Standardize features by removing the mean and scaling to unit variance 
 # 2. MinMax Scaling: Transform features by scaling each feature to a given range.
@@ -144,7 +180,7 @@ def dataset_normalization(x_train, x_test, method):
 
 def get_PCA(dataset):
     
-    PCATransformer = PCA(n_components = 6, whiten = 'True', svd_solver = 'auto')
+    PCATransformer = PCA(n_components = 5, whiten = 'True', svd_solver = 'auto')
     data = PCATransformer.fit_transform(dataset)
     
     return data
@@ -154,7 +190,7 @@ def get_PCA(dataset):
 
 def get_KPCA(dataset):
     
-    KPCAtransformer = KernelPCA(n_components = 5, kernel='sigmoid', eigen_solver = 'arpack', random_state = 42)
+    KPCAtransformer = KernelPCA(n_components = 6, kernel='sigmoid', eigen_solver = 'arpack', random_state = 42)
     data = KPCAtransformer.fit_transform(dataset)
      
     return data
@@ -170,7 +206,7 @@ def test_set_processing(dataset):
                                   "koi_sma", "koi_teq", "koi_insol", "koi_dor", "koi_count", 
                                   "koi_steff", "koi_slogg", "koi_smet", "koi_srad", "koi_smass"]
     dataset = dataset[planetary_stellar_features]
-
+    
     missing_data = dataset.isnull()
     for column in dataset:
         print(column)
@@ -243,7 +279,7 @@ def datasets_loading():
     for hab_id in hab_list:
         training_set['Habitable'] = np.where(training_set['kepoi_name'] == hab_id, 1, training_set['Habitable'])
 
-    training_set = shuffle(training_set, random_state = 0)
+    training_set = shuffle(training_set)
     training_set.reset_index(inplace=True, drop=True)
     print("Test set shape: ")
     print(training_set.shape, '\n')
@@ -267,9 +303,9 @@ def get_SVM_Hyper(X_train, y_train):
     
         param_grid = {'C': np.logspace(-3, 2, 3), 'gamma': np.logspace(-3, 2, 3), 'coef0': np.logspace(-3, 2, 3), 
                       'kernel': ['sigmoid'], 'class_weight': ['balanced']}
-        params_estimator = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(10), refit=True, verbose=1, scoring = 'accuracy')
+        params_estimator = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(10), refit=True, verbose=1, scoring = 'recall')
         params_estimator.fit(X_train,y_train)
-        print(params_estimator.best_params_, "\nAccuracy with estimated hyperparameters: ", params_estimator.best_score_)
+        print(params_estimator.best_params_, "\n Recall score with estimated hyperparameters: ", params_estimator.best_score_)
         
         C_grid = float(input("Insert C value: \n"))
         coef0_grid = float(input("Insert coef0 value: \n"))
