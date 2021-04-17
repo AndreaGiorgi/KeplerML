@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 @authors: Andrea Giorgi and Gianluca De Angelis
 """
@@ -7,10 +5,8 @@
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import scipy as sp
 import matplotlib.pyplot as plt
 from sklearn.model_selection import StratifiedKFold
-from sklearn.model_selection import train_test_split
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
 from sklearn.decomposition import KernelPCA, PCA
@@ -84,8 +80,8 @@ def data_visualization_analysis(planets, features, predictions):
     for i in range(len(predictions)):
         if predictions[i] == 1:
             habitable_planet_koi = planets.iloc[i, 2] #kepoi_name
-            planet_temperature = planets.iloc[i, 58]  #koi_teq
-            total_temperature += planet_temperature - 273.15
+            planet_temperature = planets.iloc[i, 58] - 273.15  #koi_teq in Celsius 
+            total_temperature += planet_temperature
             planet_radius = planets.iloc[i, 49] #koi_prad
             planet_star_distance = planets.iloc[i, 64] #koi_dor
             total_distance += planet_star_distance
@@ -131,7 +127,7 @@ def dataset_normalization(x_train, x_test, method):
 def get_PCA(dataset):
     
     print(dataset.shape)
-    PCATransformer = PCA(n_components = 6, whiten = 'True', svd_solver = 'auto')
+    PCATransformer = PCA(n_components = 4, whiten = 'True', svd_solver = 'auto')
     data = PCATransformer.fit_transform(dataset)
     print(data.shape)
     
@@ -145,18 +141,6 @@ def get_KPCA(dataset):
     print(data.shape)
      
     return data
-    
-def dataset_encoding(data):
-
-    X = data
-    features_to_encode = X.dtypes == object
-    columns = X.columns[features_to_encode].tolist()
-    le = LabelEncoder()
-    X[columns] = X[columns].apply(lambda col: le.fit_transform(col))
-
-    print(X.head())
-    
-    return X
 
 def test_set_processing(dataset):
         
@@ -228,11 +212,16 @@ def datasets_loading():
     for hab_id in hab_list:
         training_set['Habitable'] = np.where(training_set['kepoi_name'] == hab_id, 1, training_set['Habitable'])
 
-    training_set = shuffle(training_set, random_state = 42)
+    training_set = shuffle(training_set, random_state = 0)
     training_set.reset_index(inplace=True, drop=True)
+    print("Test set shape: ")
+    print(training_set.shape, '\n')
     
     test_set = pd.read_csv('data/cumulative_new_data.csv')
-    test_set = shuffle(test_set, random_state = 42)
+    print("Test set shape: ")
+    print(test_set.shape, '\n')
+    test_set.shape
+    test_set = shuffle(test_set, random_state = 0)
     test_set.reset_index(inplace=True, drop=True)
     
     return training_set, test_set
@@ -240,7 +229,7 @@ def datasets_loading():
 def get_SVM_Hyper(X_train, y_train):
     
         param_grid = {'C': np.logspace(-3, 2, 3), 'gamma': np.logspace(-3, 2, 3), 'coef0': np.logspace(-3, 2, 3), 'kernel': ['sigmoid'], 'class_weight': ['balanced']}
-        clf = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(10), refit=True, verbose=1, scoring = 'accuracy')
+        clf = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(2), refit=True, verbose=1, scoring = 'accuracy')
         clf.fit(X_train,y_train)
         print(clf.best_params_, "Accuracy Score: ", clf.best_score_)
         
@@ -253,23 +242,22 @@ def get_SVM_Hyper(X_train, y_train):
         
         return model
  
-
 def get_train_test(train, test, normalization, dim_reduction):
     
-    X_train = train.drop(labels = 'Habitable', axis = 1)
+    print(train.shape)
+    X_train = train.drop('Habitable', 1) ## DROPPALA DIOPORCO
+    print(X_train.shape) ## Perchè torna a 15 porcodio?
     X_test = test
     
-    ## Dataset encodin using Label Encoder
-    
-    
-    ## Normalization with Standard Scaling
-    X_train, X_test = dataset_normalization(train, test, normalization)
+    ## Normalization with Standard Scaling or MinMax scaling
+    if normalization is not None:
+        X_train, X_test = dataset_normalization(train, test, normalization)
     
     ## Principal Component Analysis PCA or Kernel PCA KPCA
     if dim_reduction == 'PCA':
         X_train = get_PCA(X_train)
         X_test = get_PCA(X_test)
-    else:
+    elif dim_reduction == 'KPCA':
         X_train = get_KPCA(X_train)
         X_test = get_KPCA(X_test)
         
@@ -283,6 +271,7 @@ def prediction_pipeline():
     test_set = test_set_processing(raw_planets_set)
     
     ## Feature selection
+    ## TODO 
     features = ['koi_ror']
     
     ## X and y sets loading
