@@ -323,7 +323,9 @@ def get_SVM_Hyper(X_train, y_train):
 def get_train_test(train, test, normalization, dim_reduction):
     
     y_train = train.Habitable
-    X_train = train.drop('Habitable', 1)
+    #X_train = train.drop('Habitable', 1)
+    X_train = train
+    X_train.drop('Habitable', axis=1, inplace = True )
     X_test = test
     
     sfs = SequentialFeatureSelector(estimator=svm.SVC(kernel='sigmoid'), cv=StratifiedKFold(10), direction='backward')
