@@ -6,13 +6,14 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, learning_curve
 from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
 from sklearn.decomposition import KernelPCA, PCA
 from sklearn.utils import shuffle
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.metrics import accuracy_score
 
 planetary_stellar_parameter_indexes = (2,  # kepoi_name:      KOI Name
                                        15,  # koi period,      Orbital Period [days]
@@ -142,14 +143,15 @@ def data_visualization_analysis(planets, features, predictions):
             planet_temperature_celsius = planets.iloc[i, 58] - 273.15  #koi_teq in Celsius 
             planet_radius = planets.iloc[i, 49] #koi_prad
             planet_star_distance = planets.iloc[i, 64] #koi_dor
-            number_of_confirmed_habitable_planets += 1
             if 183 <= planet_star_distance <= 460 and 200 <= planet_temperature <= 600 and 0.5 <= planet_radius <= 3.3:
                 print('Predicted "confirmed" Habitable planet koi = ',habitable_planet_koi, ", Equilibrium Temperature in Celsius = ", planet_temperature_celsius, ", Planet radius (Earth) = ", planet_radius)         
                 X_distance_from_parent_star_verified.append(planet_star_distance)
                 Y_surface_temprature_verified.append(planet_temperature_celsius)
                 S_planet_radius_verified.append(planet_radius)
                 colors_verified.append(np.random.randint(color_space))
+                number_of_confirmed_habitable_planets += 1
 
+    print('Predicted habitable planets inside habitable ranges: ', number_of_confirmed_habitable_planets)
     plt.scatter(X_distance_from_parent_star_verified, Y_surface_temprature_verified, s = S_planet_radius_verified, c = colors_verified)
     plt.xlabel('Distance from parent star')
     plt.ylabel('Planetary Equilibrium Temperature in Celsius')
@@ -301,7 +303,8 @@ def get_SVM_Hyper(X_train, y_train):
     
         param_grid = {'C': np.logspace(-3, 1, 3), 'gamma': np.logspace(-3, 1, 3), 'coef0': np.logspace(-3, 1, 3), 
                       'kernel': ['sigmoid'], 'class_weight': ['balanced']}
-        params_estimator = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(10), refit=True, verbose=1, scoring = 'recall')
+        params_estimator = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(10), refit=True, 
+                                        verbose=1, scoring = 'recall')
         params_estimator.fit(X_train,y_train)
         print(params_estimator.best_params_, "\n Recall score with estimated hyperparameters: ", params_estimator.best_score_)
         
@@ -325,10 +328,10 @@ def get_train_test(train, test, normalization, dim_reduction):
     y_train = train.Habitable
     #X_train = train.drop('Habitable', 1)
     X_train = train
-    X_train.drop('Habitable', axis=1, inplace = True )
+    X_train.drop('Habitable', axis=1, inplace = True)
     X_test = test
     
-    sfs = SequentialFeatureSelector(estimator=svm.SVC(kernel='sigmoid'), cv=StratifiedKFold(10), direction='backward')
+    sfs = SequentialFeatureSelector(estimator=svm.SVC(kernel='sigmoid'), cv=StratifiedKFold(10), direction='forward')
     sfs.fit(X_train, y_train)
     selected_features= X_train.columns[(sfs.get_support())]
     X_train = X_train[selected_features]
@@ -358,7 +361,7 @@ def prediction_pipeline():
     y_train = training_set.Habitable
     X_train, X_test, features = get_train_test(training_set, test_set, 'standard', 'PCA')
     
-    ## SVM Model initialization
+    ## SVM Model initialization and analysis
     svm_model = get_SVM_Hyper(X_train, y_train)
     
     ## Predict habitable planets
