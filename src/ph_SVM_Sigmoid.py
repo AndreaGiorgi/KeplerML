@@ -3,9 +3,7 @@
 """
 
 import numpy as np
-from numpy.core.numeric import Inf
 import pandas as pd
-from scipy.sparse import data
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.model_selection import StratifiedKFold
@@ -180,7 +178,7 @@ def dataset_normalization(x_train, x_test, method):
 
 def get_PCA(dataset):
     
-    PCATransformer = PCA(n_components = 5, whiten = 'True', svd_solver = 'auto')
+    PCATransformer = PCA(n_components = 6, whiten = 'True', svd_solver = 'full')
     data = PCATransformer.fit_transform(dataset)
     
     return data
@@ -301,7 +299,7 @@ def datasets_loading():
 
 def get_SVM_Hyper(X_train, y_train):
     
-        param_grid = {'C': np.logspace(-3, 2, 3), 'gamma': np.logspace(-3, 2, 3), 'coef0': np.logspace(-3, 2, 3), 
+        param_grid = {'C': np.logspace(-3, 1, 3), 'gamma': np.logspace(-3, 1, 3), 'coef0': np.logspace(-3, 1, 3), 
                       'kernel': ['sigmoid'], 'class_weight': ['balanced']}
         params_estimator = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(10), refit=True, verbose=1, scoring = 'recall')
         params_estimator.fit(X_train,y_train)
@@ -328,7 +326,7 @@ def get_train_test(train, test, normalization, dim_reduction):
     X_train = train.drop('Habitable', 1)
     X_test = test
     
-    sfs = SequentialFeatureSelector(estimator=svm.SVC(kernel='sigmoid'), cv=StratifiedKFold(10), direction='forward')
+    sfs = SequentialFeatureSelector(estimator=svm.SVC(kernel='sigmoid'), cv=StratifiedKFold(10), direction='backward')
     sfs.fit(X_train, y_train)
     selected_features= X_train.columns[(sfs.get_support())]
     X_train = X_train[selected_features]
