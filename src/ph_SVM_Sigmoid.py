@@ -180,7 +180,7 @@ def dataset_normalization(x_train, x_test, method):
 
 def get_PCA(dataset):
     
-    PCATransformer = PCA(n_components = 6, whiten = 'True', svd_solver = 'full')
+    PCATransformer = PCA(n_components = 6, whiten = 'False', svd_solver = 'auto')
     data = PCATransformer.fit_transform(dataset)
     
     return data
@@ -279,6 +279,7 @@ def datasets_loading():
     for hab_id in hab_list:
         training_set['Habitable'] = np.where(training_set['kepoi_name'] == hab_id, 1, training_set['Habitable'])
 
+    training_set.drop_duplicates(subset=['kepoi_name'], inplace = True)
     training_set = shuffle(training_set)
     training_set.reset_index(inplace=True, drop=True)
     print("Test set shape: ")
@@ -287,8 +288,8 @@ def datasets_loading():
     test_set = pd.read_csv('data/cumulative_new_data.csv')
     print("Test set shape: ")
     print(test_set.shape, '\n')
-    test_set.shape
-    test_set = shuffle(test_set, random_state = 0)
+    test_set.drop_duplicates(subset=['kepoi_name'], inplace = True)
+    test_set = shuffle(test_set)
     test_set.reset_index(inplace=True, drop=True)
     
     return training_set, test_set
@@ -301,7 +302,7 @@ def datasets_loading():
 
 def get_SVM_Hyper(X_train, y_train):
     
-        param_grid = {'C': np.logspace(-3, 1, 3), 'gamma': np.logspace(-3, 1, 3), 'coef0': np.logspace(-3, 1, 3), 
+        param_grid = {'C': np.logspace(-4, 1, 4), 'gamma': np.logspace(-4, 1, 4), 'coef0': np.logspace(-4, 1, 4), 
                       'kernel': ['sigmoid'], 'class_weight': ['balanced']}
         params_estimator = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(10), refit=True, 
                                         verbose=1, scoring = 'recall')
@@ -326,7 +327,6 @@ def get_SVM_Hyper(X_train, y_train):
 def get_train_test(train, test, normalization, dim_reduction):
     
     y_train = train.Habitable
-    #X_train = train.drop('Habitable', 1)
     X_train = train
     X_train.drop('Habitable', axis=1, inplace = True)
     X_test = test
