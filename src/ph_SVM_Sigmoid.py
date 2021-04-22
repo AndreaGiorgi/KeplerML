@@ -6,14 +6,13 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from sklearn.model_selection import StratifiedKFold, learning_curve
+from sklearn.model_selection import StratifiedKFold
 from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
 from sklearn.decomposition import KernelPCA, PCA
 from sklearn.utils import shuffle
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.metrics import accuracy_score
 
 planetary_stellar_parameter_indexes = (2,  # kepoi_name:      KOI Name
                                        15,  # koi period,      Orbital Period [days]
