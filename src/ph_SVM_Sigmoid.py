@@ -91,15 +91,15 @@ def data_visualization_analysis(planets, features, predictions):
     number_of_habitable_planets = 0
     for i in range(len(predictions)):
         if predictions[i] == 1:
-            habitable_planet_koi = planets.iloc[i, 2] #kepoi_name
-            planet_temperature = planets.iloc[i, 58] - 273.15  #koi_teq in Celsius 
+            habitable_planet_koi = planets.iloc[i, 2] #kepoi_name: Planet Kepler code
+            planet_temperature = planets.iloc[i, 58] - 273.15  #koi_teq: Planet temperature converted from Kelvin to Celsius
             if planet_temperature > maximum_temperature:
                 maximum_temperature = planet_temperature
             elif planet_temperature < minimum_temperature:
                 minimum_temperature = planet_temperature
             total_temperature += planet_temperature
-            planet_radius = planets.iloc[i, 49] #koi_prad
-            planet_star_distance = planets.iloc[i, 64] #koi_dor
+            planet_radius = planets.iloc[i, 49] #koi_prad: Planet Radius
+            planet_star_distance = planets.iloc[i, 64] #koi_dor: Distance from Planet to Star measured in Earth-Sun distance
             total_distance += planet_star_distance
             number_of_habitable_planets += 1
             print('Predicted Habitable planet koi = ',habitable_planet_koi, ", Equilibrium Temperature in Celsius = ", planet_temperature, ", Planet radius (Earth) = ", planet_radius)         
@@ -138,11 +138,17 @@ def data_visualization_analysis(planets, features, predictions):
     
     for i in range(len(predictions)):
         if predictions[i] == 1:
-            habitable_planet_koi = planets.iloc[i, 2] #kepoi_name
-            planet_temperature = planets.iloc[i, 58] #koi_teq in Celsius 
+            habitable_planet_koi = planets.iloc[i, 2] #kepoi_name: Planet Kepler code
+            planet_temperature = planets.iloc[i, 58] #koi_teq: Planet temperature converted from Kelvin to Celsius
             planet_temperature_celsius = planets.iloc[i, 58] - 273.15  #koi_teq in Celsius 
-            planet_radius = planets.iloc[i, 49] #koi_prad
-            planet_star_distance = planets.iloc[i, 64] #koi_dor
+            planet_radius = planets.iloc[i, 49] #koi_prad: Planet Radius
+            planet_star_distance = planets.iloc[i, 64] #koi_dor: Distance from Planet to Star measured in Earth-Sun distance
+            
+            # This filter will plot only predicted habitable planets which main features are between habitability range. We have followed 
+            # NASA and ESA habitability definitions in order to show only "candidate" planets which are inside the cumulative dataset. 
+            # The cumulative dataset, which is used as test set, contains all exoplanets found by Kepler. 
+            # #
+            
             if 183 <= planet_star_distance <= 460 and 200 <= planet_temperature <= 600 and 0.5 <= planet_radius <= 3.3:
                 print('Predicted "confirmed" Habitable planet koi = ',habitable_planet_koi, ", Equilibrium Temperature in Celsius = ", planet_temperature_celsius, ", Planet radius (Earth) = ", planet_radius)         
                 X_distance_from_parent_star_verified.append(planet_star_distance)
@@ -153,7 +159,7 @@ def data_visualization_analysis(planets, features, predictions):
 
     print('Predicted habitable planets inside habitable ranges: ', number_of_confirmed_habitable_planets)
     plt.scatter(X_distance_from_parent_star_verified, Y_surface_temprature_verified, s = S_planet_radius_verified, c = colors_verified)
-    plt.xlabel('Distance from parent star')
+    plt.xlabel('Distance from parent star, in Earth-Sun distance')
     plt.ylabel('Planetary Equilibrium Temperature in Celsius')
     plt.show()           
     
@@ -262,11 +268,11 @@ def training_set_processing(dataset):
     return dataset
 
 ## Dataset loading (ETL pipeline) 
-# 1. Load non habitable and habitable planets data 
+# 1. Load non habitable and habitable planets data, in order to define a training set. 
 # 2. Concatenate them in training set and add prediction label Habitabile, default value -1 [Non Habitable]
 # 3. Set Habitable label to 1 for each confirmed habitable planet 
 # 4. Shuffle dataset in order to reduce order dependency 
-# 5. Load and shuffle test data, taken from cumulative keplero data
+# 5. Load and shuffle test data, taken from cumulative Kepler data
 
 def datasets_loading():
     
