@@ -307,21 +307,21 @@ def datasets_loading():
 
 def get_SVM_Hyper(X_train, y_train):
     
-        param_grid = {'C': np.logspace(-4, 1, 4), 'gamma': np.logspace(-4, 1, 4), 'coef0': np.logspace(-4, 1, 4), 
+    param_grid = {'C': np.logspace(-4, 1, 4), 'gamma': np.logspace(-4, 1, 4), 'coef0': np.logspace(-4, 1, 4), 
                       'kernel': ['sigmoid'], 'class_weight': ['balanced']}
-        params_estimator = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(10), refit=True, 
+    params_estimator = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(10), refit=True, 
                                         verbose=1, scoring = 'recall')
-        params_estimator.fit(X_train,y_train)
-        print(params_estimator.best_params_, "\n Recall score with estimated hyperparameters: ", params_estimator.best_score_)
+    params_estimator.fit(X_train,y_train)
+    print(params_estimator.best_params_, "\n Recall score with estimated hyperparameters: ", params_estimator.best_score_)
         
-        C_grid = float(input("Insert C value: \n"))
-        coef0_grid = float(input("Insert coef0 value: \n"))
-        gamma_grid = float(input("Insert gamma value: \n"))
+    C_grid = float(input("Insert C value: \n"))
+    coef0_grid = float(input("Insert coef0 value: \n"))
+    gamma_grid = float(input("Insert gamma value: \n"))
     
-        model = svm.SVC(C=C_grid, kernel='sigmoid', coef0=coef0_grid, gamma=gamma_grid, class_weight='balanced')
-        model.fit(X_train, y_train)
+    model = svm.SVC(C=C_grid, kernel='sigmoid', coef0=coef0_grid, gamma=gamma_grid, class_weight='balanced')
+    model.fit(X_train, y_train)
         
-        return model
+    return model
  
  ## Train and test set initializer 
  # 1. Loads prediction label and train/test sets 
