@@ -8,12 +8,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from tensorflow import keras
 from keras import Sequential, layers
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import StratifiedKFold
-from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn.decomposition import PCA
 from sklearn.utils import shuffle
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from tensorflow.python.keras import callbacks
 from tensorflow.python.keras.layers.core import Dropout
 from tensorflow.python.keras.layers.normalization import BatchNormalization
 
@@ -76,7 +74,7 @@ planetary_stellar_parameter_cols_dict = {"koi_period": "Orbital Period",
 #       3. Planet radius between [0.5, 3.3] Earth radius
 
 
-def data_visualization_analysis(planets, features, predictions):
+def data_visualization_analysis(planets, predictions):
     
     X_distance_from_parent_star = []
     Y_surface_temprature = []
@@ -110,7 +108,6 @@ def data_visualization_analysis(planets, features, predictions):
             S_planet_radius.append(planet_radius)
             colors.append(np.random.randint(color_space))
     
-    print("Features used were: ", features)
     print("Number of habitable planets detected: " , number_of_habitable_planets)
     mean_distance = total_distance/number_of_habitable_planets
     print('Mean distance of habitable planets: ' , mean_distance)
@@ -272,7 +269,7 @@ def datasets_loading():
     habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
     training_set = pd.concat([non_habitable, habitable_planets])
 
-    training_set.insert(1, "Habitable", -1, True)
+    training_set.insert(1, "Habitable", 0, True)
     hab_list = habitable_planets["kepoi_name"].tolist()
     for hab_id in hab_list:
         training_set['Habitable'] = np.where(training_set['kepoi_name'] == hab_id, 1, training_set['Habitable'])
@@ -295,21 +292,27 @@ def datasets_loading():
 def get_MLP_predictions(X_train, y_train, test_set):
     
     data_shape = X_train[1].shape
-    print(data_shape)
-    
+
     model = Sequential()
-    model.add(layers.Dense(units = 8, input_shape=data_shape, activation='elu', kernel_initializer='he_normal')),
+
+    early_stopping = callbacks.EarlyStopping(monitor = 'accuracy', mode='auto', verbose=1, patience=200)
+    model.add(layers.Dense(units = 32, input_shape=data_shape, activation='elu', kernel_initializer='he_normal')),
+    model.add(Dropout(0.5)),
     BatchNormalization(),
-    model.add(layers.Dense(units = 32, activation='elu', kernel_initializer='he_normal')),
-    BatchNormalization(), 
-    model.add(layers.Dense(units = 32, activation='elu', kernel_initializer='he_normal')),
+    model.add(layers.Dense(units = 64, activation='elu', kernel_initializer='he_normal')),
+    model.add(Dropout(0.3)),
     BatchNormalization(),
-    model.add(layers.Dense(units = 32, activation='elu', kernel_initializer='he_normal')),
-    BatchNormalization(),  
+    model.add(layers.Dense(units = 64, activation='elu', kernel_initializer='he_normal')),
+    model.add(Dropout(0.3)),   
+    BatchNormalization(),
+    model.add(layers.Dense(units = 64, activation='elu', kernel_initializer='he_normal')),
+    model.add(Dropout(0.3)),    
+    BatchNormalization(),
     model.add(layers.Dense(units = 1, activation='sigmoid', kernel_initializer='he_normal')),
     
-    model.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics=['accuracy'])
-    model.fit(X_train, y_train, epochs=100, batch_size=32, verbose = 1, use_multiprocessing=True)
+    ## AMSGrad is a stochastic optimization method that seeks to fix a convergence issue with Adam based optimizers
+    model.compile(optimizer=keras.optimizers.Adam(amsgrad=True), loss = 'binary_crossentropy', metrics=['accuracy'])
+    model.fit(X_train, y_train, epochs=4000, batch_size=16, verbose = 1, use_multiprocessing=True, callbacks = early_stopping)
     
     planet_predictions = model.predict(test_set)
     
@@ -328,7 +331,8 @@ def get_train_test(train, test, normalization, dim_reduction):
     X_train.drop('Habitable', axis=1, inplace = True)
     X_test = test
     
-    #sfs = SequentialFeatureSelector(estimator= DecisionTreeClassifier(), cv=StratifiedKFold(10), direction='forward')
+    #sfs = SequentialFeatureSelector(estimator= RandomForestClassifier(n_estimators=100, random_state=42), 
+    #                                 cv=StratifiedKFold(10), direction='backward')
     #sfs.fit(X_train, y_train)
     #selected_features= X_train.columns[(sfs.get_support())]
     #X_train = X_train[selected_features]
@@ -337,7 +341,7 @@ def get_train_test(train, test, normalization, dim_reduction):
     if normalization is not None:
         X_train, X_test = dataset_normalization(train, test, normalization)
     
-    ## Principal Component Analysis PCA or Kernel PCA KPCA
+    ## Principal Component Analysis PCA
     if dim_reduction == 'PCA':
         X_train = get_PCA(X_train)
         X_test = get_PCA(X_test)
@@ -359,7 +363,7 @@ def prediction_pipeline():
     y_predicted = get_MLP_predictions(X_train, y_train, X_test)
     
     ## Results visualization
-    data_visualization_analysis(raw_planets_set, 'ao', y_predicted)
+    data_visualization_analysis(raw_planets_set,  y_predicted)
 
 if __name__ == "__main__":
     prediction_pipeline()
