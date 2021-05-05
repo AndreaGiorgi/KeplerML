@@ -3,6 +3,7 @@
 """
 
 
+from keras.layers.advanced_activations import ELU
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -282,10 +283,11 @@ def datasets_loading():
     print("Test set shape: ")
     print(training_set.shape, '\n')
     
-    test_set = pd.read_csv('data/cumulative_new_data.csv')
-    print("Test set shape: ")
-    print(test_set.shape, '\n')
-    test_set.drop_duplicates(subset=['kepoi_name'], inplace = True)
+    cumulative = pd.read_csv('data/cumulative_new_data.csv')
+    print("Cumulative data shape: ")
+    print(cumulative.shape, '\n')
+    test_set = pd.concat([cumulative, training_set])
+    test_set.drop_duplicates(subset=['kepoi_name'], inplace = True, keep = False)
     test_set = shuffle(test_set)
     test_set.reset_index(inplace=True, drop=True)
     
@@ -294,19 +296,19 @@ def datasets_loading():
 def get_MLP_predictions(shape, X_train, y_train, test_set):
 
     model = Sequential() 
-    early_stopping = callbacks.EarlyStopping(monitor = 'loss', mode='min', verbose=2, patience=50)
+    early_stopping = callbacks.EarlyStopping(monitor = 'loss', mode='auto', verbose=2, patience=100)
 
     model.add(layers.Dense(units = 8, kernel_initializer='he_normal')),
-    model.add(Activation('elu')),
+    model.add(ELU()),
     model.add(BatchNormalization()),
     model.add(layers.Dense(units = 16, kernel_initializer='he_normal')),
-    model.add(Activation('elu')),   
+    model.add(ELU()),   
     model.add(BatchNormalization()),
     model.add(layers.Dense(units = 16, kernel_initializer='he_normal')),    
-    model.add(Activation('elu')),
+    model.add(ELU()),
     model.add(BatchNormalization()),   
     model.add(layers.Dense(units = 16, kernel_initializer='he_normal')), 
-    model.add(Activation('elu')),
+    model.add(ELU()),
     model.add(layers.Dense(units = 1, activation='sigmoid'))
     
     ## AMSGrad is a stochastic optimization method that seeks to fix a convergence issue with Adam based optimizers
