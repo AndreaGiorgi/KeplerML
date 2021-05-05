@@ -2,18 +2,19 @@
 @authors: Andrea Giorgi and Gianluca De Angelis
 """
 
+
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from tensorflow import keras
-from keras import Sequential, layers
+from tensorflow import keras 
+from keras import Sequential, layers, callbacks
+from keras.layers import Dropout
+from keras.layers.normalization import BatchNormalization
+from keras.layers.core import Activation
 from sklearn.decomposition import PCA
 from sklearn.utils import shuffle
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from tensorflow.python.keras import callbacks
-from tensorflow.python.keras.layers.core import Dropout
-from tensorflow.python.keras.layers.normalization import BatchNormalization
 
 planetary_stellar_parameter_indexes = (2,  # kepoi_name:      KOI Name
                                        15,  # koi period,      Orbital Period [days]
@@ -185,8 +186,9 @@ def dataset_normalization(x_train, x_test, method):
 
 def get_PCA(dataset):
     
-    PCATransformer = PCA(n_components = 6, svd_solver = 'auto')
+    PCATransformer = PCA(n_components = 4, whiten = True, svd_solver = 'full')
     data = PCATransformer.fit_transform(dataset)
+    print(data.shape)
     
     return data
 
@@ -214,7 +216,7 @@ def test_set_processing(dataset):
         print(NaN_data[column].value_counts())
         print('')
         
-    dataset = dataset.dropna()
+    dataset = dataset.fillna(0)
     
     return dataset
 
@@ -289,30 +291,27 @@ def datasets_loading():
     
     return training_set, test_set
 
-def get_MLP_predictions(X_train, y_train, test_set):
-    
-    data_shape = X_train[1].shape
+def get_MLP_predictions(shape, X_train, y_train, test_set):
 
-    model = Sequential()
+    model = Sequential() 
+    early_stopping = callbacks.EarlyStopping(monitor = 'loss', mode='min', verbose=2, patience=50)
 
-    early_stopping = callbacks.EarlyStopping(monitor = 'accuracy', mode='auto', verbose=1, patience=200)
-    model.add(layers.Dense(units = 32, input_shape=data_shape, activation='elu', kernel_initializer='he_normal')),
-    model.add(Dropout(0.5)),
-    BatchNormalization(),
-    model.add(layers.Dense(units = 64, activation='elu', kernel_initializer='he_normal')),
-    model.add(Dropout(0.3)),
-    BatchNormalization(),
-    model.add(layers.Dense(units = 64, activation='elu', kernel_initializer='he_normal')),
-    model.add(Dropout(0.3)),   
-    BatchNormalization(),
-    model.add(layers.Dense(units = 64, activation='elu', kernel_initializer='he_normal')),
-    model.add(Dropout(0.3)),    
-    BatchNormalization(),
-    model.add(layers.Dense(units = 1, activation='sigmoid', kernel_initializer='he_normal')),
+    model.add(layers.Dense(units = 8, kernel_initializer='he_normal')),
+    model.add(Activation('elu')),
+    model.add(BatchNormalization()),
+    model.add(layers.Dense(units = 16, kernel_initializer='he_normal')),
+    model.add(Activation('elu')),   
+    model.add(BatchNormalization()),
+    model.add(layers.Dense(units = 16, kernel_initializer='he_normal')),    
+    model.add(Activation('elu')),
+    model.add(BatchNormalization()),   
+    model.add(layers.Dense(units = 16, kernel_initializer='he_normal')), 
+    model.add(Activation('elu')),
+    model.add(layers.Dense(units = 1, activation='sigmoid'))
     
     ## AMSGrad is a stochastic optimization method that seeks to fix a convergence issue with Adam based optimizers
     model.compile(optimizer=keras.optimizers.Adam(amsgrad=True), loss = 'binary_crossentropy', metrics=['accuracy'])
-    model.fit(X_train, y_train, epochs=4000, batch_size=16, verbose = 1, use_multiprocessing=True, callbacks = early_stopping)
+    model.fit(X_train, y_train, batch_size=32, epochs=2000, verbose = 1, callbacks = early_stopping, validation_split = 0.1)
     
     planet_predictions = model.predict(test_set)
     
@@ -326,16 +325,9 @@ def get_MLP_predictions(X_train, y_train, test_set):
  
 def get_train_test(train, test, normalization, dim_reduction):
     
-    y_train = train.Habitable
     X_train = train
     X_train.drop('Habitable', axis=1, inplace = True)
     X_test = test
-    
-    #sfs = SequentialFeatureSelector(estimator= RandomForestClassifier(n_estimators=100, random_state=42), 
-    #                                 cv=StratifiedKFold(10), direction='backward')
-    #sfs.fit(X_train, y_train)
-    #selected_features= X_train.columns[(sfs.get_support())]
-    #X_train = X_train[selected_features]
     
     ## Normalization with Standard Scaling or MinMax scaling
     if normalization is not None:
@@ -357,10 +349,11 @@ def prediction_pipeline():
     
     ## Feature selection and X and Y selection
     y_train = training_set.Habitable
-    X_train, X_test = get_train_test(training_set, test_set, 'standard', 'PCA')
+    data_shape = training_set['Habitable'].shape
+    X_train, X_test = get_train_test(training_set, test_set, None, None)
     
     ## MLP Model initialization. Return predictions
-    y_predicted = get_MLP_predictions(X_train, y_train, X_test)
+    y_predicted = get_MLP_predictions(data_shape, X_train, y_train, X_test)
     
     ## Results visualization
     data_visualization_analysis(raw_planets_set,  y_predicted)

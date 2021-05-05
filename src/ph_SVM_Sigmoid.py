@@ -185,7 +185,7 @@ def dataset_normalization(x_train, x_test, method):
 
 def get_PCA(dataset):
     
-    PCATransformer = PCA(n_components = 6, whiten = 'False', svd_solver = 'auto')
+    PCATransformer = PCA(n_components = 6, whiten = True, svd_solver = 'full')
     data = PCATransformer.fit_transform(dataset)
     
     return data
@@ -279,7 +279,7 @@ def datasets_loading():
     habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
     training_set = pd.concat([non_habitable, habitable_planets])
 
-    training_set.insert(1, "Habitable", -1, True)
+    training_set.insert(1, "Habitable", 0, True)
     hab_list = habitable_planets["kepoi_name"].tolist()
     for hab_id in hab_list:
         training_set['Habitable'] = np.where(training_set['kepoi_name'] == hab_id, 1, training_set['Habitable'])
