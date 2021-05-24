@@ -170,12 +170,12 @@ def dataset_normalization(x_train, x_test, method):
     
     if method == 'standard':
         scaler = StandardScaler()
-        normalized_train = pd.DataFrame(scaler.fit_transform(x_train.values), columns=x_train.columns, index=x_train.index)
-        normalized_test = pd.DataFrame(scaler.fit_transform(x_test.values), columns=x_test.columns, index=x_test.index)
+        normalized_train = scaler.fit_transform(x_train.values)
+        normalized_test = scaler.fit_transform(x_test.values)
     else: 
         scaler = MinMaxScaler()
-        normalized_train = pd.DataFrame(scaler.fit_transform(x_train.values), columns=x_train.columns, index=x_train.index)
-        normalized_test = pd.DataFrame(scaler.fit_transform(x_test.values), columns=x_test.columns, index=x_test.index)
+        normalized_train = scaler.fit_transform(x_train.values)
+        normalized_test = scaler.fit_transform(x_test.values)
         
     return normalized_train, normalized_test
 
