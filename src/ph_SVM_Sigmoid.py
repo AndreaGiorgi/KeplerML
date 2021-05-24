@@ -185,7 +185,7 @@ def dataset_normalization(x_train, x_test, method):
 
 def get_PCA(dataset):
     
-    PCATransformer = PCA(n_components = 6, whiten = True, svd_solver = 'full')
+    PCATransformer = PCA(n_components = 3, whiten = True, svd_solver = 'full')
     data = PCATransformer.fit_transform(dataset)
     
     return data
