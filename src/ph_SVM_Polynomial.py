@@ -14,14 +14,7 @@ from sklearn.decomposition import KernelPCA, PCA
 from sklearn.utils import shuffle
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
-# TODO
-# 1. Implement ETL pipeline
-# 2. Implement Feature selection algorithm
-# 3. Implement Dataset normalization with Standard Scaling (StandardScaler)
-# 4. Implement SVM model with Polynomial Kernel
-# 5. Results visualization
-
-planetary_stellar_parameter_indexes = (2,   # kepoi_name:      KOI Name
+planetary_stellar_parameter_indexes = (2,  # kepoi_name:      KOI Name
                                        15,  # koi period,      Orbital Period [days]
                                        42,  # koi_ror:         Planet-Star Radius Ratio
                                        45,  # koi_srho:        Fitted Stellar Density [g/cm**3] -
@@ -35,40 +28,40 @@ planetary_stellar_parameter_indexes = (2,   # kepoi_name:      KOI Name
                                        90,  # koi_slogg:       Stellar Surface Gravity [log10(cm/s**2)]
                                        93,  # koi_smet:        Stellar Metallicity [dex]
                                        96,  # koi_srad:        Stellar Radius [Solar radii]
-                                       99   # koi_smass:       Stellar Mass [Solar mass]
+                                       99  # koi_smass:       Stellar Mass [Solar mass]
                                        )
-#Names of columns from kepler data
-planetary_stellar_parameter_cols = (   "koi_period",    # koi_period       Orbital Period [days]
-                                       "koi_ror",       # koi_ror:         Planet-Star Radius Ratio
-                                       "koi_srho",      # koi_srho:        Fitted Stellar Density [g/cm**3] -
-                                       "koi_prad",      # koi_prad:        Planetary Radius [Earth radii]
-                                       "koi_sma",       # koi_sma:         Orbit Semi-Major Axis [AU]
-                                       "koi_teq",       # koi_teq:         Equilibrium Temperature [K]
-                                       "koi_insol",     # koi_insol:       Insolation Flux [Earth flux]
-                                       "koi_dor",       # koi_dor:         Planet-Star Distance over Star Radius
-                                       "koi_count",     # koi_count:       Number of Planet 
-                                       "koi_steff",     # koi_steff:       Stellar Effective Temperature [K] 
-                                       "koi_slogg",     # koi_slogg:       Stellar Surface Gravity [log10(cm/s**2)]
-                                       "koi_smet",      # koi_smet:        Stellar Metallicity [dex]
-                                       "koi_srad",      # koi_srad:        Stellar Radius [Solar radii]
-                                       "koi_smass"      # koi_smass:       Stellar Mass [Solar mass]
-                                       )
-                                       
-planetary_stellar_parameter_cols_dict = {   "koi_period":   "Orbital Period",
-                                       "koi_ror":     "Planet-Star Radius Ratio",
-                                       "koi_srho":      "Fitted Stellar Density",
-                                       "koi_prad":     "Planetary Radius",
-                                       "koi_sma":      "Orbit Semi-Major Axis",
-                                       "koi_teq":       "Equilibrium Temperature",
-                                       "koi_insol":     "Insolation Flux",
-                                       "koi_dor":       "Planet-Star Distance over Star Radius",
-                                       "koi_count":     "Number of Planet" ,
-                                       "koi_steff":     "Stellar Effective Temperature" ,
-                                       "koi_slogg":     "Stellar Surface Gravity",
-                                       "koi_smet":      "Stellar Metallicity",
-                                       "koi_srad":      "Stellar Radius",
-                                       "koi_smass":      "Stellar Mass"
-                                       }
+# Names of columns from kepler data
+planetary_stellar_parameter_cols = ("koi_period",  # koi_period       Orbital Period [days]
+                                    "koi_ror",  # koi_ror:         Planet-Star Radius Ratio
+                                    "koi_srho",  # koi_srho:        Fitted Stellar Density [g/cm**3] -
+                                    "koi_prad",  # koi_prad:        Planetary Radius [Earth radii]
+                                    "koi_sma",  # koi_sma:         Orbit Semi-Major Axis [AU]
+                                    "koi_teq",  # koi_teq:         Equilibrium Temperature [K]
+                                    "koi_insol",  # koi_insol:       Insolation Flux [Earth flux]
+                                    "koi_dor",  # koi_dor:         Planet-Star Distance over Star Radius
+                                    "koi_count",  # koi_count:       Number of Planet
+                                    "koi_steff",  # koi_steff:       Stellar Effective Temperature [K]
+                                    "koi_slogg",  # koi_slogg:       Stellar Surface Gravity [log10(cm/s**2)]
+                                    "koi_smet",  # koi_smet:        Stellar Metallicity [dex]
+                                    "koi_srad",  # koi_srad:        Stellar Radius [Solar radii]
+                                    "koi_smass"  # koi_smass:       Stellar Mass [Solar mass]
+                                    )
+
+planetary_stellar_parameter_cols_dict = {"koi_period": "Orbital Period",
+                                         "koi_ror": "Planet-Star Radius Ratio",
+                                         "koi_srho": "Fitted Stellar Density",
+                                         "koi_prad": "Planetary Radius",
+                                         "koi_sma": "Orbit Semi-Major Axis",
+                                         "koi_teq": "Equilibrium Temperature",
+                                         "koi_insol": "Insolation Flux",
+                                         "koi_dor": "Planet-Star Distance over Star Radius",
+                                         "koi_count": "Number of Planet",
+                                         "koi_steff": "Stellar Effective Temperature",
+                                         "koi_slogg": "Stellar Surface Gravity",
+                                         "koi_smet": "Stellar Metallicity",
+                                         "koi_srad": "Stellar Radius",
+                                         "koi_smass": "Stellar Mass"
+                                         }
 
 ## Results visualization
 # Visualize prediction results in order to analize model behaviour and performances
@@ -167,5 +160,221 @@ def data_visualization_analysis(planets, features, predictions):
     plt.scatter(X_distance_from_parent_star_verified, Y_surface_temprature_verified, s = S_planet_radius_verified, c = colors_verified)
     plt.xlabel('Distance from parent star, in Earth-Sun distance')
     plt.ylabel('Planetary Equilibrium Temperature in Celsius')
-    plt.show()
+    plt.show()           
     
+## Dataset normalization algorihtms
+# 1. StandardScaling: Standardize features by removing the mean and scaling to unit variance 
+# 2. MinMax Scaling: Transform features by scaling each feature to a given range.
+
+def dataset_normalization(x_train, x_test, method):
+    
+    if method == 'standard':
+        scaler = StandardScaler()
+        normalized_train = scaler.fit_transform(x_train)
+        normalized_test = scaler.fit_transform(x_test)
+    else: 
+        scaler = MinMaxScaler()
+        normalized_train = scaler.fit_transform(x_train)
+        normalized_test = scaler.fit_transform(x_test)
+        
+    return normalized_train, normalized_test
+
+## Principal component analysis (PCA). 
+# Linear dimensionality reduction using Singular Value Decomposition SVD of the data to project it to a lower dimensional space. 
+# The input data is centered but not scaled for each feature before applying the SVD.
+
+def get_PCA(dataset):
+    
+    PCATransformer = PCA(n_components = 6, whiten = True, svd_solver = 'full')
+    data = PCATransformer.fit_transform(dataset)
+    
+    return data
+
+## Kernel Principal component analysis (KPCA). 
+# Non-linear dimensionality reduction through the use of kernels, here we use sigmoid in order to be consistent with SVM kernel
+
+def get_KPCA(dataset):
+    
+    KPCAtransformer = KernelPCA(n_components = 6, kernel='sigmoid', eigen_solver = 'arpack', random_state = 42)
+    data = KPCAtransformer.fit_transform(dataset)
+     
+    return data
+
+## Test set preprocessing (ETL Pipeline)
+# 1. Loads dataset with planetary features 
+# 2. Checks for missing data and drops rows with missing data
+
+
+def test_set_processing(dataset):
+        
+    planetary_stellar_features = ["koi_period", "koi_ror", "koi_srho", "koi_prad", 
+                                  "koi_sma", "koi_teq", "koi_insol", "koi_dor", "koi_count", 
+                                  "koi_steff", "koi_slogg", "koi_smet", "koi_srad", "koi_smass"]
+    dataset = dataset[planetary_stellar_features]
+    
+    missing_data = dataset.isnull()
+    for column in dataset:
+        print(column)
+        print(missing_data[column].value_counts())
+        print('')
+        
+    NaN_data = dataset.isna()
+    for column in dataset:
+        print(column)
+        print(NaN_data[column].value_counts())
+        print('')
+        
+    dataset = dataset.dropna()
+    
+    return dataset
+
+## Training set preprocessing (ETL Pipeline)
+# 1. Loads dataset with planetary features 
+# 2. Checks for missing data and fillis rows with missing data with default 0 value 
+# 3. Calculates and plot features correlation for analisys purpose 
+
+def training_set_processing(dataset):
+    
+    ## Drop all columns that are not listed in Planetary columns
+    
+    planetary_stellar_features = ["Habitable", "koi_period", "koi_ror", "koi_srho", "koi_prad", 
+                                  "koi_sma", "koi_teq", "koi_insol", "koi_dor", "koi_count", 
+                                  "koi_steff", "koi_slogg", "koi_smet", "koi_srad", "koi_smass"]
+    dataset = dataset[planetary_stellar_features]
+    
+    missing_data = dataset.isnull()
+    for column in dataset:
+        print(column)
+        print(missing_data[column].value_counts())
+        print('')
+        
+    NaN_data = dataset.isna()
+    for column in dataset:
+        print(column)
+        print(NaN_data[column].value_counts())
+        print('')
+        
+    dataset = dataset.fillna(0)
+    
+    correlation = dataset.corr()
+    correlation_target = abs(correlation["Habitable"])
+    print(correlation_target)
+    sns.heatmap(correlation, 
+            xticklabels=correlation.columns.values,
+            yticklabels=correlation.columns.values)
+    plt.show()
+
+    return dataset
+
+## Dataset loading (ETL pipeline) 
+# 1. Load non habitable and habitable planets data, in order to define a training set. 
+# 2. Concatenate them in training set and add prediction label Habitabile, default value -1 [Non Habitable]
+# 3. Set Habitable label to 1 for each confirmed habitable planet 
+# 4. Shuffle dataset in order to reduce order dependency 
+# 5. Load and shuffle test data, taken from cumulative Kepler data
+
+def datasets_loading():
+    
+    non_habitable = pd.read_csv('data/non_habitable_planets_confirmed_detailed_list.csv')
+    habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
+    training_set = pd.concat([non_habitable, habitable_planets])
+
+    training_set.insert(1, "Habitable", 0, True)
+    hab_list = habitable_planets["kepoi_name"].tolist()
+    for hab_id in hab_list:
+        training_set['Habitable'] = np.where(training_set['kepoi_name'] == hab_id, 1, training_set['Habitable'])
+
+    training_set.drop_duplicates(subset=['kepoi_name'], inplace = True)
+    training_set = shuffle(training_set)
+    training_set.reset_index(inplace=True, drop=True)
+    print("Training data shape: ")
+    print(training_set.shape, '\n')
+    
+    cumulative = pd.read_csv('data/cumulative_new_data.csv')
+    print("Cumulative data shape: ")
+    print(cumulative.shape, '\n')
+    test_set = pd.concat([cumulative, training_set])
+    test_set.drop_duplicates(subset=['kepoi_name'], inplace = True, keep = False)
+    test_set = shuffle(test_set)
+    test_set.reset_index(inplace=True, drop=True)
+    
+    return training_set, test_set
+
+## Support Vector Machine Hyperparameters estimation 
+# 1. Defines the paramaters grid 
+# 2. Use GridSearchCV to estimate the best parameters, it values them in order to achive highest accuracy 
+# 3. Show the best parameters and it allows to set manually svm parameters, based on estimated ones 
+# 4. Initialize optimized model and it fits the model on X_Train and y_train
+
+def get_SVM_Hyper(X_train, y_train):
+    
+    param_grid = {'C': np.logspace(-3, 1, 3), 'degree': [1, 3, 5, 10, 12], 'gamma': np.logspace(-3, 1, 3),
+                      'kernel': ['poly'], 'class_weight': ['balanced']}
+    params_estimator = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(10), refit=True, 
+                                        verbose=1, scoring = 'recall')
+    params_estimator.fit(X_train,y_train)
+    print(params_estimator.best_params_, "\n Recall score with estimated hyperparameters: ", params_estimator.best_score_)
+        
+    C_grid = float(input("Insert C value: \n"))
+    coef0_grid = float(input("Insert coef0 value: \n"))
+    gamma_grid = float(input("Insert gamma value: \n"))
+    
+    model = svm.SVC(C=C_grid, kernel='sigmoid', coef0=coef0_grid, gamma=gamma_grid, class_weight='balanced')
+    model.fit(X_train, y_train)
+        
+    return model
+ 
+ ## Train and test set initializer 
+ # 1. Loads prediction label and train/test sets 
+ # 2. Applies Sequential Feature Selection algorithm in order to extract most important features 
+ # 3. Normalize X_train and X_test using standard scaling or MinMax scaling 
+ # 4. Applies dimensionality reduction technique PCA or KPCA
+ 
+def get_train_test(train, test, normalization, dim_reduction):
+    
+    y_train = train.Habitable
+    X_train = train
+    X_train.drop('Habitable', axis=1, inplace = True)
+    X_test = test
+    
+    sfs = SequentialFeatureSelector(estimator=svm.SVC(kernel='poly'), cv=StratifiedKFold(10), direction='forward')
+    sfs.fit(X_train, y_train)
+    selected_features= X_train.columns[(sfs.get_support())]
+    X_train = X_train[selected_features]
+    
+    ## Normalization with Standard Scaling or MinMax scaling
+    if normalization is not None:
+        X_train, X_test = dataset_normalization(train, test, normalization)
+    
+    ## Principal Component Analysis PCA or Kernel PCA KPCA
+    if dim_reduction == 'PCA':
+        X_train = get_PCA(X_train)
+        X_test = get_PCA(X_test)
+    elif dim_reduction == 'KPCA':
+        X_train = get_KPCA(X_train)
+        X_test = get_KPCA(X_test)
+        
+    return X_train, X_test, selected_features
+         
+def prediction_pipeline():
+    
+    ## ETL
+    raw_training_set, raw_planets_set = datasets_loading()
+    training_set = training_set_processing(raw_training_set)
+    test_set = test_set_processing(raw_planets_set)
+    
+    ## Feature selection and X and Y selection
+    y_train = training_set.Habitable
+    X_train, X_test, features = get_train_test(training_set, test_set, 'standard', 'PCA')
+    
+    ## SVM Model initialization and analysis
+    svm_model = get_SVM_Hyper(X_train, y_train)
+    
+    ## Predict habitable planets
+    y_predicted = svm_model.predict(X_test)
+    
+    ## Results visualization
+    data_visualization_analysis(raw_planets_set, features, y_predicted)
+
+if __name__ == "__main__":
+    prediction_pipeline()

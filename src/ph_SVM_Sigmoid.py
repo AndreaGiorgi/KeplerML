@@ -170,12 +170,12 @@ def dataset_normalization(x_train, x_test, method):
     
     if method == 'standard':
         scaler = StandardScaler()
-        normalized_train = scaler.fit_transform(x_train)
-        normalized_test = scaler.fit_transform(x_test)
+        normalized_train = pd.DataFrame(scaler.fit_transform(x_train.values), columns=x_train.columns, index=x_train.index)
+        normalized_test = pd.DataFrame(scaler.fit_transform(x_test.values), columns=x_test.columns, index=x_test.index)
     else: 
         scaler = MinMaxScaler()
-        normalized_train = scaler.fit_transform(x_train)
-        normalized_test = scaler.fit_transform(x_test)
+        normalized_train = pd.DataFrame(scaler.fit_transform(x_train.values), columns=x_train.columns, index=x_train.index)
+        normalized_test = pd.DataFrame(scaler.fit_transform(x_test.values), columns=x_test.columns, index=x_test.index)
         
     return normalized_train, normalized_test
 
@@ -345,7 +345,7 @@ def get_train_test(train, test, normalization, dim_reduction):
     ## Normalization with Standard Scaling or MinMax scaling
     if normalization is not None:
         X_train, X_test = dataset_normalization(train, test, normalization)
-    
+      
     ## Principal Component Analysis PCA or Kernel PCA KPCA
     if dim_reduction == 'PCA':
         X_train = get_PCA(X_train)

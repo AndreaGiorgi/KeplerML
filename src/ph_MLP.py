@@ -1,18 +1,15 @@
 """
 @authors: Andrea Giorgi and Gianluca De Angelis
 """
-
-
-from keras.layers.advanced_activations import ELU
+from keras.layers.advanced_activations import ELU, LeakyReLU
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from tensorflow import keras 
 from keras import Sequential, layers, callbacks
-from keras.layers import Dropout
-from keras.layers.normalization import BatchNormalization
-from keras.layers.core import Activation
+from keras.constraints import MinMaxNorm, UnitNorm
+from keras.layers.core import Activation, Dropout
 from sklearn.decomposition import PCA
 from sklearn.utils import shuffle
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -293,27 +290,28 @@ def datasets_loading():
     
     return training_set, test_set
 
-def get_MLP_predictions(shape, X_train, y_train, test_set):
-
+def get_MLP_predictions(X_train, y_train, test_set):
+  
     model = Sequential() 
-    early_stopping = callbacks.EarlyStopping(monitor = 'loss', mode='auto', verbose=2, patience=100)
+    early_stopping = callbacks.EarlyStopping(monitor = 'val_accuracy', mode='max', verbose=2, patience=200, restore_best_weights=True)
 
     model.add(layers.Dense(units = 8, kernel_initializer='he_normal')),
     model.add(ELU()),
-    model.add(BatchNormalization()),
+    model.add(layers.Dense(units = 8, kernel_initializer = 'he_normal')),
+    model.add(ELU()),
+    model.add(Dropout(0.2)),
     model.add(layers.Dense(units = 16, kernel_initializer='he_normal')),
-    model.add(ELU()),   
-    model.add(BatchNormalization()),
+    model.add(ELU()),
+    model.add(Dropout(0.2)),
     model.add(layers.Dense(units = 16, kernel_initializer='he_normal')),    
     model.add(ELU()),
-    model.add(BatchNormalization()),   
     model.add(layers.Dense(units = 16, kernel_initializer='he_normal')), 
     model.add(ELU()),
     model.add(layers.Dense(units = 1, activation='sigmoid'))
     
     ## AMSGrad is a stochastic optimization method that seeks to fix a convergence issue with Adam based optimizers
     model.compile(optimizer=keras.optimizers.Adam(amsgrad=True), loss = 'binary_crossentropy', metrics=['accuracy'])
-    model.fit(X_train, y_train, batch_size=32, epochs=2000, verbose = 1, callbacks = early_stopping, validation_split = 0.1)
+    model.fit(X_train, y_train, batch_size=50, epochs=2000, verbose = 1, callbacks = early_stopping, validation_split = 0.1)
     
     planet_predictions = model.predict(test_set)
     
@@ -351,11 +349,10 @@ def prediction_pipeline():
     
     ## Feature selection and X and Y selection
     y_train = training_set.Habitable
-    data_shape = training_set['Habitable'].shape
-    X_train, X_test = get_train_test(training_set, test_set, None, None)
+    X_train, X_test = get_train_test(training_set, test_set, 'standard', 'PCA')
     
     ## MLP Model initialization. Return predictions
-    y_predicted = get_MLP_predictions(data_shape, X_train, y_train, X_test)
+    y_predicted = get_MLP_predictions(X_train, y_train, X_test)
     
     ## Results visualization
     data_visualization_analysis(raw_planets_set,  y_predicted)
