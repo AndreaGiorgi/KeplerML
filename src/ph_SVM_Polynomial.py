@@ -7,10 +7,9 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.model_selection import StratifiedKFold
-from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
-from sklearn.decomposition import KernelPCA, PCA
+from sklearn.decomposition import PCA
 from sklearn.utils import shuffle
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
@@ -73,7 +72,7 @@ planetary_stellar_parameter_cols_dict = {"koi_period": "Orbital Period",
 #       3. Planet radius between [0.5, 3.3] Earth radius
 
 
-def data_visualization_analysis(planets, features, predictions):
+def data_visualization_analysis(planets, predictions):
     
     X_distance_from_parent_star = []
     Y_surface_temprature = []
@@ -107,7 +106,6 @@ def data_visualization_analysis(planets, features, predictions):
             S_planet_radius.append(planet_radius)
             colors.append(np.random.randint(color_space))
     
-    print("Features used were: ", features)
     print("Number of habitable planets detected: " , number_of_habitable_planets)
     mean_distance = total_distance/number_of_habitable_planets
     print('Mean distance of habitable planets: ' , mean_distance)
@@ -185,19 +183,9 @@ def dataset_normalization(x_train, x_test, method):
 
 def get_PCA(dataset):
     
-    PCATransformer = PCA(n_components = 6, whiten = True, svd_solver = 'full')
+    PCATransformer = PCA(n_components = 5, whiten = True, svd_solver = 'auto')
     data = PCATransformer.fit_transform(dataset)
     
-    return data
-
-## Kernel Principal component analysis (KPCA). 
-# Non-linear dimensionality reduction through the use of kernels, here we use sigmoid in order to be consistent with SVM kernel
-
-def get_KPCA(dataset):
-    
-    KPCAtransformer = KernelPCA(n_components = 6, kernel='sigmoid', eigen_solver = 'arpack', random_state = 42)
-    data = KPCAtransformer.fit_transform(dataset)
-     
     return data
 
 ## Test set preprocessing (ETL Pipeline)
@@ -275,8 +263,8 @@ def training_set_processing(dataset):
 
 def datasets_loading():
     
-    non_habitable = pd.read_csv('data/non_habitable_planets_confirmed_detailed_list.csv')
-    habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
+    non_habitable = pd.read_csv('non_habitable_planets_confirmed_detailed_list.csv')
+    habitable_planets = pd.read_csv('habitable_planets_detailed_list.csv')
     training_set = pd.concat([non_habitable, habitable_planets])
 
     training_set.insert(1, "Habitable", 0, True)
@@ -290,7 +278,7 @@ def datasets_loading():
     print("Training data shape: ")
     print(training_set.shape, '\n')
     
-    cumulative = pd.read_csv('data/cumulative_new_data.csv')
+    cumulative = pd.read_csv('cumulative_new_data.csv')
     print("Cumulative data shape: ")
     print(cumulative.shape, '\n')
     test_set = pd.concat([cumulative, training_set])
@@ -336,25 +324,25 @@ def get_train_test(train, test, normalization, dim_reduction):
     X_train = train
     X_train.drop('Habitable', axis=1, inplace = True)
     X_test = test
-    
-    sfs = SequentialFeatureSelector(estimator=svm.SVC(kernel='poly'), cv=StratifiedKFold(10), direction='forward')
-    sfs.fit(X_train, y_train)
-    selected_features= X_train.columns[(sfs.get_support())]
-    X_train = X_train[selected_features]
-    
+
+
+    ## Con la feature selection il kernel sfasa e blocca tutto
+    ## PCA a 6 ok, PCA totale sfasa
+    #sfs = SequentialFeatureSelector(estimator=svm.SVC(kernel='poly'), cv=StratifiedKFold(2), direction='forward')
+    #sfs.fit(X_train, y_train)
+    #selected_features= X_train.columns[(sfs.get_support())]
+    #X_train = X_train[selected_features]
+
     ## Normalization with Standard Scaling or MinMax scaling
     if normalization is not None:
         X_train, X_test = dataset_normalization(train, test, normalization)
-    
+  
     ## Principal Component Analysis PCA or Kernel PCA KPCA
     if dim_reduction == 'PCA':
         X_train = get_PCA(X_train)
         X_test = get_PCA(X_test)
-    elif dim_reduction == 'KPCA':
-        X_train = get_KPCA(X_train)
-        X_test = get_KPCA(X_test)
         
-    return X_train, X_test, selected_features
+    return X_train, X_test
          
 def prediction_pipeline():
     
@@ -365,7 +353,7 @@ def prediction_pipeline():
     
     ## Feature selection and X and Y selection
     y_train = training_set.Habitable
-    X_train, X_test, features = get_train_test(training_set, test_set, 'standard', 'PCA')
+    X_train, X_test = get_train_test(training_set, test_set, 'standard', 'PCA')
     
     ## SVM Model initialization and analysis
     svm_model = get_SVM_Hyper(X_train, y_train)
@@ -374,7 +362,7 @@ def prediction_pipeline():
     y_predicted = svm_model.predict(X_test)
     
     ## Results visualization
-    data_visualization_analysis(raw_planets_set, features, y_predicted)
+    data_visualization_analysis(raw_planets_set, y_predicted)
 
 if __name__ == "__main__":
     prediction_pipeline()
