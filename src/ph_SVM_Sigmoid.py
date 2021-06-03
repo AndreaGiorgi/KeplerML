@@ -285,7 +285,7 @@ def datasets_loading():
         training_set['Habitable'] = np.where(training_set['kepoi_name'] == hab_id, 1, training_set['Habitable'])
 
     training_set.drop_duplicates(subset=['kepoi_name'], inplace = True)
-    training_set = shuffle(training_set)
+    #training_set = shuffle(training_set)
     training_set.reset_index(inplace=True, drop=True)
     print("Training data shape: ")
     print(training_set.shape, '\n')
@@ -295,7 +295,7 @@ def datasets_loading():
     print(cumulative.shape, '\n')
     test_set = pd.concat([cumulative, training_set])
     test_set.drop_duplicates(subset=['kepoi_name'], inplace = True, keep = False)
-    test_set = shuffle(test_set)
+    #test_set = shuffle(test_set)
     test_set.reset_index(inplace=True, drop=True)
     
     return training_set, test_set
@@ -311,7 +311,7 @@ def get_SVM_Hyper(X_train, y_train):
     param_grid = {'C': np.logspace(-4, 1, 4), 'gamma': np.logspace(-4, 1, 4), 'coef0': np.logspace(-4, 1, 4), 
                       'kernel': ['sigmoid'], 'class_weight': ['balanced']}
     params_estimator = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(10), refit=True, 
-                                        verbose=1, scoring = 'recall')
+                                        verbose=1, scoring = 'f1', n_jobs = 2)
     params_estimator.fit(X_train,y_train)
     print(params_estimator.best_params_, "\n Recall score with estimated hyperparameters: ", params_estimator.best_score_)
         
@@ -337,7 +337,7 @@ def get_train_test(train, test, normalization, dim_reduction):
     X_train.drop('Habitable', axis=1, inplace = True)
     X_test = test
     
-    sfs = SequentialFeatureSelector(estimator=svm.SVC(kernel='sigmoid'), cv=StratifiedKFold(10), direction='forward')
+    sfs = SequentialFeatureSelector(estimator=svm.SVC(kernel='sigmoid'), cv=StratifiedKFold(10), direction='backward')
     sfs.fit(X_train, y_train)
     selected_features= X_train.columns[(sfs.get_support())]
     X_train = X_train[selected_features]
