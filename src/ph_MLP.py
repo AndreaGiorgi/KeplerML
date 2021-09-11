@@ -2,6 +2,7 @@
 @authors: Andrea Giorgi and Gianluca De Angelis
 """
 from keras.layers.advanced_activations import ELU, LeakyReLU
+from keras.layers.normalization_v2 import BatchNormalization
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -184,7 +185,7 @@ def dataset_normalization(x_train, x_test, method):
 
 def get_PCA(dataset):
     
-    PCATransformer = PCA(n_components = 4, whiten = True, svd_solver = 'full')
+    PCATransformer = PCA(n_components = 6, whiten = True, svd_solver = 'full')
     data = PCATransformer.fit_transform(dataset)
     print(data.shape)
     
@@ -275,7 +276,6 @@ def datasets_loading():
         training_set['Habitable'] = np.where(training_set['kepoi_name'] == hab_id, 1, training_set['Habitable'])
 
     training_set.drop_duplicates(subset=['kepoi_name'], inplace = True)
-    training_set = shuffle(training_set)
     training_set.reset_index(inplace=True, drop=True)
     print("Test set shape: ")
     print(training_set.shape, '\n')
@@ -285,7 +285,6 @@ def datasets_loading():
     print(cumulative.shape, '\n')
     test_set = pd.concat([cumulative, training_set])
     test_set.drop_duplicates(subset=['kepoi_name'], inplace = True, keep = False)
-    test_set = shuffle(test_set)
     test_set.reset_index(inplace=True, drop=True)
     
     return training_set, test_set
@@ -295,23 +294,21 @@ def get_MLP_predictions(X_train, y_train, test_set):
     model = Sequential() 
     early_stopping = callbacks.EarlyStopping(monitor = 'val_accuracy', mode='max', verbose=2, patience=200, restore_best_weights=True)
 
-    model.add(layers.Dense(units = 8, kernel_initializer='he_normal')),
+    model.add(layers.Dense(units = 126)),
     model.add(ELU()),
-    model.add(layers.Dense(units = 8, kernel_initializer = 'he_normal')),
+    model.add(layers.Dense(units = 64)),
     model.add(ELU()),
-    model.add(Dropout(0.2)),
-    model.add(layers.Dense(units = 16, kernel_initializer='he_normal')),
+    model.add(layers.Dense(units = 32)),
     model.add(ELU()),
-    model.add(Dropout(0.2)),
-    model.add(layers.Dense(units = 16, kernel_initializer='he_normal')),    
+    model.add(layers.Dense(units = 16)),  
     model.add(ELU()),
-    model.add(layers.Dense(units = 16, kernel_initializer='he_normal')), 
+    model.add(layers.Dense(units = 8)), 
     model.add(ELU()),
     model.add(layers.Dense(units = 1, activation='sigmoid'))
     
     ## AMSGrad is a stochastic optimization method that seeks to fix a convergence issue with Adam based optimizers
     model.compile(optimizer=keras.optimizers.Adam(amsgrad=True), loss = 'binary_crossentropy', metrics=['accuracy'])
-    model.fit(X_train, y_train, batch_size=50, epochs=2000, verbose = 1, callbacks = early_stopping, validation_split = 0.1)
+    model.fit(X_train, y_train, batch_size=25, epochs=2000, verbose = 1, callbacks = early_stopping, validation_split = 0.2)
     
     planet_predictions = model.predict(test_set)
     
