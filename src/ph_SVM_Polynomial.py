@@ -2,8 +2,11 @@
 @authors: Andrea Giorgi and Gianluca De Angelis
 """
 
+import os
+import time
 import numpy as np
 import pandas as pd
+import psutil
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.model_selection import StratifiedKFold
@@ -71,6 +74,23 @@ planetary_stellar_parameter_cols_dict = {"koi_period": "Orbital Period",
 #       2. Temperature between [200,600] Kelvin
 #       3. Planet radius between [0.5, 3.3] Earth radius
 
+def get_process_memory():
+    process = psutil.Process(os.getpid())
+    return process.memory_info().rss
+
+def track(func):
+    def wrapper(*args, **kwargs):
+        mem_before = get_process_memory()/1024/1024
+        start = time.time()
+        result = func(*args, **kwargs)
+        elapsed_time = time.time() - start
+        mem_after = get_process_memory()/1024/1024
+        print("{}: memory before: {:,} MB, after: {:,} MB, consumed: {:,} MB; exec time: {}".format(
+            func.__name__,
+            mem_before, mem_after, (mem_after - mem_before),
+            elapsed_time))
+        return result
+    return wrapper
 
 def data_visualization_analysis(planets, predictions):
     
@@ -263,8 +283,8 @@ def training_set_processing(dataset):
 
 def datasets_loading():
     
-    non_habitable = pd.read_csv('non_habitable_planets_confirmed_detailed_list.csv')
-    habitable_planets = pd.read_csv('habitable_planets_detailed_list.csv')
+    non_habitable = pd.read_csv('data/non_habitable_planets_confirmed_detailed_list.csv')
+    habitable_planets = pd.read_csv('data/habitable_planets_detailed_list.csv')
     training_set = pd.concat([non_habitable, habitable_planets])
 
     training_set.insert(1, "Habitable", 0, True)
@@ -278,7 +298,7 @@ def datasets_loading():
     print("Training data shape: ")
     print(training_set.shape, '\n')
     
-    cumulative = pd.read_csv('cumulative_new_data.csv')
+    cumulative = pd.read_csv('data/cumulative_new_data.csv')
     print("Cumulative data shape: ")
     print(cumulative.shape, '\n')
     test_set = pd.concat([cumulative, training_set])
@@ -299,7 +319,7 @@ def get_SVM_Hyper(X_train, y_train):
     param_grid = {'C': np.logspace(-3, 1, 3), 'degree': [1, 3, 5, 10, 12], 'gamma': np.logspace(-3, 1, 3),
                       'kernel': ['poly'], 'class_weight': ['balanced']}
     params_estimator = GridSearchCV(svm.SVC(), param_grid, cv = StratifiedKFold(10), refit=True, 
-                                        verbose=1, scoring = 'recall')
+                                        verbose=1, scoring = 'f1')
     params_estimator.fit(X_train,y_train)
     print(params_estimator.best_params_, "\n Recall score with estimated hyperparameters: ", params_estimator.best_score_)
         
@@ -307,7 +327,7 @@ def get_SVM_Hyper(X_train, y_train):
     coef0_grid = float(input("Insert coef0 value: \n"))
     gamma_grid = float(input("Insert gamma value: \n"))
     
-    model = svm.SVC(C=C_grid, kernel='sigmoid', coef0=coef0_grid, gamma=gamma_grid, class_weight='balanced')
+    model = svm.SVC(C=C_grid, kernel='poly', coef0=coef0_grid, gamma=gamma_grid, class_weight='balanced')
     model.fit(X_train, y_train)
         
     return model
@@ -320,11 +340,9 @@ def get_SVM_Hyper(X_train, y_train):
  
 def get_train_test(train, test, normalization, dim_reduction):
     
-    y_train = train.Habitable
     X_train = train
     X_train.drop('Habitable', axis=1, inplace = True)
     X_test = test
-
 
     ## Con la feature selection il kernel sfasa e blocca tutto
     ## PCA a 6 ok, PCA totale sfasa
@@ -343,7 +361,8 @@ def get_train_test(train, test, normalization, dim_reduction):
         X_test = get_PCA(X_test)
         
     return X_train, X_test
-         
+
+@track
 def prediction_pipeline():
     
     ## ETL

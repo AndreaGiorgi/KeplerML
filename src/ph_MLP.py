@@ -1,10 +1,14 @@
 """
 @authors: Andrea Giorgi and Gianluca De Angelis
 """
-from keras.layers.advanced_activations import ELU, LeakyReLU
+import os
+import time
+from keras.activations import relu
+from keras.layers.advanced_activations import ELU, LeakyReLU, ReLU
 from keras.layers.normalization_v2 import BatchNormalization
 import numpy as np
 import pandas as pd
+import psutil
 import seaborn as sns
 import matplotlib.pyplot as plt
 from tensorflow import keras 
@@ -292,23 +296,17 @@ def datasets_loading():
 def get_MLP_predictions(X_train, y_train, test_set):
   
     model = Sequential() 
-    early_stopping = callbacks.EarlyStopping(monitor = 'val_accuracy', mode='max', verbose=2, patience=200, restore_best_weights=True)
+    early_stopping = callbacks.EarlyStopping(monitor = 'val_loss', mode='min', verbose=2, patience=200, restore_best_weights=True)
 
-    model.add(layers.Dense(units = 126)),
+    model.add(layers.Dense(units = 8)),
     model.add(ELU()),
-    model.add(layers.Dense(units = 64)),
-    model.add(ELU()),
-    model.add(layers.Dense(units = 32)),
-    model.add(ELU()),
-    model.add(layers.Dense(units = 16)),  
-    model.add(ELU()),
-    model.add(layers.Dense(units = 8)), 
+    model.add(layers.Dense(units = 8)),
     model.add(ELU()),
     model.add(layers.Dense(units = 1, activation='sigmoid'))
     
     ## AMSGrad is a stochastic optimization method that seeks to fix a convergence issue with Adam based optimizers
     model.compile(optimizer=keras.optimizers.Adam(amsgrad=True), loss = 'binary_crossentropy', metrics=['accuracy'])
-    model.fit(X_train, y_train, batch_size=25, epochs=2000, verbose = 1, callbacks = early_stopping, validation_split = 0.2)
+    model.fit(X_train, y_train, batch_size=50, epochs=2000, verbose = 1, callbacks = early_stopping, validation_split = 0.2)
     
     planet_predictions = model.predict(test_set)
     
@@ -336,7 +334,26 @@ def get_train_test(train, test, normalization, dim_reduction):
         X_test = get_PCA(X_test)
         
     return X_train, X_test
-         
+
+def get_process_memory():
+    process = psutil.Process(os.getpid())
+    return process.memory_info().rss
+
+def track(func):
+    def wrapper(*args, **kwargs):
+        mem_before = get_process_memory()/1024/1024
+        start = time.time()
+        result = func(*args, **kwargs)
+        elapsed_time = time.time() - start
+        mem_after = get_process_memory()/1024/1024
+        print("{}: memory before: {:,} MB, after: {:,} MB, consumed: {:,} MB; exec time: {}".format(
+            func.__name__,
+            mem_before, mem_after, (mem_after - mem_before),
+            elapsed_time))
+        return result
+    return wrapper
+
+@track  
 def prediction_pipeline():
     
     ## ETL
@@ -346,7 +363,7 @@ def prediction_pipeline():
     
     ## Feature selection and X and Y selection
     y_train = training_set.Habitable
-    X_train, X_test = get_train_test(training_set, test_set, 'standard', 'PCA')
+    X_train, X_test = get_train_test(training_set, test_set, None , None)
     
     ## MLP Model initialization. Return predictions
     y_predicted = get_MLP_predictions(X_train, y_train, X_test)

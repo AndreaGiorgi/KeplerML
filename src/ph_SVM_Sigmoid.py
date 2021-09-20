@@ -1,7 +1,9 @@
 """
 @authors: Andrea Giorgi and Gianluca De Angelis
 """
-
+import time
+import psutil
+import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -71,6 +73,26 @@ planetary_stellar_parameter_cols_dict = {"koi_period": "Orbital Period",
 #       1. Planet-Star distance between [0.85, 1.7] AU
 #       2. Temperature between [200,600] Kelvin
 #       3. Planet radius between [0.5, 3.3] Earth radius
+
+
+def get_process_memory():
+    process = psutil.Process(os.getpid())
+    return process.memory_info().rss
+
+def track(func):
+    def wrapper(*args, **kwargs):
+        mem_before = get_process_memory()/1024/1024
+        start = time.time()
+        result = func(*args, **kwargs)
+        elapsed_time = time.time() - start
+        mem_after = get_process_memory()/1024/1024
+        print("{}: memory before: {:,} MB, after: {:,} MB, consumed: {:,} MB; exec time: {}".format(
+            func.__name__,
+            mem_before, mem_after, (mem_after - mem_before),
+            elapsed_time))
+        return result
+    return wrapper
+
 
 
 def data_visualization_analysis(planets, features, predictions):
@@ -355,7 +377,8 @@ def get_train_test(train, test, normalization, dim_reduction):
         X_test = get_KPCA(X_test)
         
     return X_train, X_test, selected_features
-         
+
+@track
 def prediction_pipeline():
     
     ## ETL
