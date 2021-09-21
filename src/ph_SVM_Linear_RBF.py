@@ -230,8 +230,8 @@ def forward_search_features (habitable, non_habitable, start_train, train_width,
     return selected_features 
 
 def load_training_planets_data():
-    habitable_planets = np.genfromtxt('../data/habitable_planets_detailed_list.csv',filling_values = 0, names=True, dtype=None, delimiter=",",usecols=planetary_stellar_parameter_indexes, encoding=None) 
-    non_habitable_planets = np.genfromtxt('../data/non_habitable_planets_confirmed_detailed_list.csv', filling_values = 0, names = True, dtype=None, delimiter=",",usecols=planetary_stellar_parameter_indexes, encoding=None) 
+    habitable_planets = np.genfromtxt('data/habitable_planets_detailed_list.csv',filling_values = 0, names=True, dtype=None, delimiter=",",usecols=planetary_stellar_parameter_indexes, encoding=None) 
+    non_habitable_planets = np.genfromtxt('data/non_habitable_planets_confirmed_detailed_list.csv', filling_values = 0, names = True, dtype=None, delimiter=",",usecols=planetary_stellar_parameter_indexes, encoding=None) 
     
     np.random.shuffle(habitable_planets)
     np.random.shuffle(non_habitable_planets)        
@@ -425,43 +425,6 @@ def predict_on_new_kepler_data(kepler_data_file, kernel):
     plt.xlabel('Distance from parent star in the unit of star\'s radius')
     plt.ylabel('Planetary Equilibrium Temperature in Celsius')
     plt.show()
-    
-    X_distance_from_parent_star_verified = []
-    Y_surface_temprature_verified = []
-    S_planet_radius_verified = []
-    colors_verified = []
-    
-    minimum_temperature = 0
-    maximum_temperature = 0    
-    number_of_confirmed_habitable_planets = 0
-    
-    for i in range(len(y_predicated)):
-        if y_predicated[i] == 1:
-            habitable_planet_koi = planets_from_kepler.iloc[i, 2] #kepoi_name: Planet Kepler code
-            planet_temperature = planets_from_kepler.iloc[i, 58] #koi_teq: Planet temperature converted from Kelvin to Celsius
-            planet_temperature_celsius = planets_from_kepler.iloc[i, 58] - 273.15  #koi_teq in Celsius 
-            planet_radius = planets_from_kepler.iloc[i, 49] #koi_prad: Planet Radius
-            planet_star_distance = planets_from_kepler.iloc[i, 64] #koi_dor: Distance from Planet to Star measured in Earth-Sun distance
-    
-            # This filter will plot only predicted habitable planets which main features are between habitability range. We have followed 
-            # NASA and ESA habitability definitions in order to show only "candidate" planets which are inside the cumulative dataset. 
-            # The cumulative dataset, which is used as test set, contains all exoplanets found by Kepler. 
-            # #
-            
-    if 183 <= planet_star_distance <= 460 and 200 <= planet_temperature <= 600 and 0.5 <= planet_radius <= 3.3:
-        print('Predicted "confirmed" Habitable planet koi = ',habitable_planet_koi, ", Equilibrium Temperature in Celsius = ", planet_temperature_celsius, ", Planet radius (Earth) = ", planet_radius)         
-        X_distance_from_parent_star_verified.append(planet_star_distance)
-        Y_surface_temprature_verified.append(planet_temperature_celsius)
-        S_planet_radius_verified.append(planet_radius)
-        colors_verified.append(np.random.randint(color_space))
-        number_of_confirmed_habitable_planets += 1
-
-    print('Predicted habitable planets inside habitable ranges: ', number_of_confirmed_habitable_planets)
-    plt.scatter(X_distance_from_parent_star_verified, Y_surface_temprature_verified, s = S_planet_radius_verified, c = colors_verified)
-    plt.xlabel('Distance from parent star, in Earth-Sun distance')
-    plt.ylabel('Planetary Equilibrium Temperature in Celsius')
-    plt.show()  
-
 '''
 This program could be called either with just --kernel = {linear, rbf}
 or data file with all columns generated from Kepler's KOI table
