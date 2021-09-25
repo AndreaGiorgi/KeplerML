@@ -315,7 +315,7 @@ def datasets_loading():
     cumulative = pd.read_csv('data/cumulative_new_data.csv')
     print("Cumulative data shape: ")
     print(cumulative.shape, '\n')
-    test_set = pd.concat([cumulative, training_set])
+    test_set = cumulative
     test_set.drop_duplicates(subset=['kepoi_name'], inplace = True, keep = False)
     #test_set = shuffle(test_set)
     test_set.reset_index(inplace=True, drop=True)
