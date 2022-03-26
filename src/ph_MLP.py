@@ -3,9 +3,7 @@
 """
 import os
 import time
-from keras.activations import relu
-from keras.layers.advanced_activations import ELU, LeakyReLU, ReLU
-from keras.layers.normalization_v2 import BatchNormalization
+from keras.layers.advanced_activations import ELU
 import numpy as np
 import pandas as pd
 import psutil
@@ -13,10 +11,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from tensorflow import keras 
 from keras import Sequential, layers, callbacks
-from keras.constraints import MinMaxNorm, UnitNorm
-from keras.layers.core import Activation, Dropout
 from sklearn.decomposition import PCA
-from sklearn.utils import shuffle
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 planetary_stellar_parameter_indexes = (2,  # kepoi_name:      KOI Name
